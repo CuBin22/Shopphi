@@ -1,0 +1,13 @@
+{% extends "catalog/base.html" %}
+{% block title %}Đăng nhập - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>Đăng nhập</h1></div>
+<form method="post" class="formcard">
+  {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+  {% if form.non_field_errors %}<p class="msg msg--error">{{ form.non_field_errors.0 }}</p>{% endif %}
+  <label>Email hoặc số điện thoại{{ form.identifier }}</label>{{ form.identifier.errors }}
+  <label>Mật khẩu{{ form.password }}</label>{{ form.password.errors }}
+  <button class="btn" type="submit">Đăng nhập</button>
+  <p class="shop">Chưa có tài khoản? <a href="{% url 'register' %}">Đăng ký</a>. Sai 5 lần liên tiếp sẽ bị tạm khóa 15 phút.</p>
+</form>
+{% endblock %}
