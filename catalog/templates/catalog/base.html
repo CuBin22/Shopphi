@@ -1,0 +1,68 @@
+{% load static %}<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="{{ csrf_token }}">
+  <title>{% block title %}Shopphi - Sàn đa gian hàng{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'catalog/css/app.css' %}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<a class="skip" href="#noidung">Bỏ qua phần đầu trang</a>
+
+<header class="top">
+  <div class="wrap top__row">
+    <a class="brand" href="{% url 'home' %}" aria-label="Shopphi, về trang chủ">
+      <span class="brand__mark" aria-hidden="true"></span>Shopphi
+    </a>
+    {% block headersearch %}{% include "catalog/_search_form.html" with variant="compact" %}{% endblock %}
+    <nav class="top__links" aria-label="Tài khoản">
+      <a href="{% url 'cart' %}" class="cartlink">Giỏ hàng <span class="count" id="cart-count">{{ cart_count }}</span></a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'notifications' %}">Thông báo{% if unread_count %} <span class="count count--alert">{{ unread_count }}</span>{% endif %}</a>
+        {% if role == 'KHACH_HANG' %}<a href="{% url 'my_orders' %}">Đơn hàng</a>
+        {% else %}<a href="{% url 'manage_home' %}">Kênh quản lý</a>{% endif %}
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Quản trị</a>{% endif %}
+        <span class="who">{{ user.first_name|default:user.username }}</span>
+        <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}<button class="linkbtn linkbtn--plain" type="submit">Đăng xuất</button></form>
+      {% else %}
+        <a href="{% url 'login' %}">Đăng nhập</a>
+        <a class="btn btn--small" href="{% url 'register' %}">Đăng ký</a>
+      {% endif %}
+    </nav>
+  </div>
+  <nav class="cats wrap" aria-label="Danh mục">
+    <a href="{% url 'search' %}" {% if not category and request.resolver_match.url_name == 'search' %}aria-current="page"{% endif %}>Tất cả</a>
+    {% for c in nav_categories %}
+      <a href="{% url 'search' %}?danh_muc={{ c.slug }}" {% if category == c.slug %}aria-current="page"{% endif %}>{{ c.name }}</a>
+    {% endfor %}
+  </nav>
+</header>
+
+{% if messages %}
+<div class="wrap msgs" role="status">
+  {% for m in messages %}<p class="msg msg--{{ m.level_tag }}">{{ m }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<main id="noidung" class="wrap">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <div class="wrap">Shopphi là bản thử nghiệm của đồ án. Thanh toán chỉ dùng môi trường Sandbox, không kết nối ngân hàng thật.</div>
+</footer>
+<div id="chat" class="chat" hidden data-url="{% url 'chatbot' %}" data-history="{% url 'chatbot_history' %}">
+  <div class="chat__head"><strong>Trợ lý Shopphi</strong><button type="button" id="chat-close" aria-label="Đóng">&times;</button></div>
+  <p class="chat__ctx" id="chat-ctx" hidden></p>
+  <div class="chat__log" id="chat-log" aria-live="polite"></div>
+  <form class="chat__form" id="chat-form"><input id="chat-input" maxlength="300" placeholder="Hỏi về giá, tồn kho, thông số..." autocomplete="off"><button type="submit" class="btn btn--small">Gửi</button></form>
+</div>
+<button type="button" class="chatfab" id="chat-open" data-chat-open>Hỏi chatbot</button>
+<script src="{% static 'catalog/js/app.js' %}" defer></script>
+<script src="{% static 'catalog/js/chat.js' %}" defer></script>
+</body>
+</html>

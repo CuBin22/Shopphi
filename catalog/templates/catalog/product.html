@@ -1,0 +1,86 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}{{ p.name }} - Shopphi{% endblock %}
+{% block content %}
+<nav class="crumbs" aria-label="Vị trí">
+  <a href="{% url 'home' %}">Trang chủ</a><span>/</span>
+  <a href="{% url 'search' %}?danh_muc={{ p.category.slug }}">{{ p.category.name }}</a><span>/</span>
+  <span>{{ p.name }}</span>
+</nav>
+
+<section class="detail">
+  <div class="tile tile--{{ p.category.slug }} tone-{{ p.pk|tone }} tile--big">
+    {% if p.image %}<img class="tile__image" src="{{ p.image.url }}" alt="{{ p.name }}">{% else %}{% include "catalog/_glyph.html" with slug=p.category.slug %}{% endif %}
+  </div>
+
+  <div class="detail__info">
+    <h1>{{ p.name }}</h1>
+    <p class="shop">Gian hàng: {{ p.shop.name }}{% if p.brand %} &middot; Thương hiệu: {{ p.brand }}{% endif %}</p>
+    <p class="price price--big" id="price">{{ p.price|vnd }}</p>
+    <p class="vat">Giá đã gồm VAT</p>
+    {% if rating_avg %}<p class="rating"><span class="stars">{{ rating_avg|stars }}</span> {{ rating_avg }}/5 ({{ rating_count }} đánh giá)</p>{% endif %}
+
+    <form method="post" action="{% url 'cart_add' %}" class="buy" id="buy">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <fieldset>
+        <legend>Biến thể</legend>
+        <div class="variants">
+          {% for v in variants %}
+          <label class="chip {% if v.stock == 0 %}is-out{% endif %}">
+            <input type="radio" name="variant" value="{{ v.pk }}" data-price="{{ v.price|vnd }}" data-stock="{{ v.stock }}"
+                   {% if forloop.first %}checked{% endif %}>
+            <span>{{ v.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="qtyrow">
+        <div class="qty" role="group" aria-label="Số lượng">
+          <button type="button" data-qty="-1" aria-label="Giảm">&minus;</button>
+          <input type="number" name="qty" value="1" min="1" id="qty" inputmode="numeric">
+          <button type="button" data-qty="1" aria-label="Tăng">+</button>
+        </div>
+        <span class="stock" id="stock"></span>
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit" id="add">Thêm vào giỏ</button>
+        <button class="btn btn--ghost" type="button" data-chat-open data-product="{{ p.pk }}" data-name="{{ p.name }}">Hỏi chatbot</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="block">
+  <div class="block__head"><h2>Mô tả và thông số</h2></div>
+  <p class="prose">{{ p.description }}</p>
+  {% if p.spec_rows %}
+  <dl class="specs">
+    {% for k, v in p.spec_rows %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}
+  </dl>
+  {% endif %}
+</section>
+
+<section class="block" aria-labelledby="h-dg">
+  <div class="block__head"><h2 id="h-dg">Đánh giá của khách hàng</h2></div>
+  {% for r in reviews %}
+  <div class="review"><p><span class="stars">{{ r.rating|stars }}</span> <strong>{{ r.user.first_name|default:"Khách hàng" }}</strong> <span class="shop">{{ r.created|date:"d/m/Y" }}</span></p>{% if r.comment %}<p>{{ r.comment }}</p>{% endif %}</div>
+  {% empty %}<p class="empty">Chưa có đánh giá nào. Chỉ khách đã nhận hàng mới đánh giá được.</p>{% endfor %}
+</section>
+
+<section class="block" aria-labelledby="h-sp">
+  <div class="block__head">
+    <h2 id="h-sp">Sản phẩm gợi ý</h2>
+    <p>{% if personal %}Dựa trên những gì bạn đã xem gần đây{% else %}Sản phẩm cùng danh mục được quan tâm nhiều{% endif %}</p>
+  </div>
+  {% if recommended %}
+  <div class="grid grid--4">
+    {% for r in recommended %}{% include "catalog/_card.html" with p=r nguon="goi-y" %}{% endfor %}
+  </div>
+  {% else %}
+  <p class="empty">Chưa có sản phẩm gợi ý phù hợp.</p>
+  {% endif %}
+</section>
+{% endblock %}
