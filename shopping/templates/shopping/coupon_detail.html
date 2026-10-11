@@ -1,0 +1,9 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="resulthead"><h1>Mã {{ c.code }}</h1><p>{{ c.label }}, đơn tối thiểu {{ c.min_order|vnd }}, đã dùng {{ c.used_count }}/{{ c.max_uses }}</p></div>
+<table class="tbl"><thead><tr><th>Mã đơn / nhóm</th><th>Khách hàng</th><th>Thời điểm</th><th>Số tiền giảm</th><th>Hoàn lượt</th></tr></thead><tbody>
+{% for u in uses %}<tr><td>{% if u.order %}Đơn #{{ u.order_id }}{% else %}Nhóm #{{ u.group_id }}{% endif %}</td><td>{{ u.user.first_name|default:u.user.username }}</td><td>{{ u.created|date:"d/m/Y H:i" }}</td><td>{{ u.amount|vnd }}</td><td>{{ u.refunded|yesno:"Có,Không" }}</td></tr>
+{% empty %}<tr><td colspan="5">Chưa có lượt áp dụng.</td></tr>{% endfor %}</tbody></table>
+<p><a href="{% url 'coupons' %}">&larr; Danh sách mã</a></p>
+{% endblock %}

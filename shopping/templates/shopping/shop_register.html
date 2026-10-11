@@ -1,0 +1,9 @@
+{% extends "catalog/base.html" %}
+{% block content %}
+<div class="resulthead"><h1>{% if resubmit %}Sửa và gửi lại xét duyệt{% else %}Đăng ký gian hàng{% endif %}</h1></div>
+<form method="post" class="formcard">{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  <button class="btn" type="submit">{% if resubmit %}Gửi lại{% else %}Gửi yêu cầu{% endif %}</button>
+</form>
+{% endblock %}

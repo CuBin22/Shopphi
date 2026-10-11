@@ -128,6 +128,8 @@ class Order(models.Model):
     tracking_code = models.CharField("Mã vận đơn", max_length=60, blank=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     cancel_reason = models.CharField("Lý do hủy", max_length=255, blank=True)
+    payment_txn = models.ForeignKey("PaymentTransaction", null=True, blank=True, on_delete=models.SET_NULL,
+                                    related_name="paid_orders", verbose_name="Giao dịch đã thanh toán đơn này")
     created = models.DateTimeField(default=timezone.now, db_index=True)
 
     class Meta:
@@ -263,7 +265,14 @@ class PaymentTransaction(models.Model):
     REFUND_WAIT, REFUNDED = "CHO_HOAN_TIEN", "DA_HOAN_TIEN"
     REFUND = [("", "Không"), (REFUND_WAIT, "Chờ hoàn tiền"), (REFUNDED, "Đã hoàn tiền")]
 
+    SANDBOX, ZALOPAY = "SANDBOX", "ZALOPAY"
+    PROVIDERS = [(SANDBOX, "Cổng giả lập"), (ZALOPAY, "ZaloPay")]
+
     ref = models.CharField("Mã giao dịch nội bộ", max_length=40, unique=True)
+    provider = models.CharField("Cổng thanh toán", max_length=10, choices=PROVIDERS, default=SANDBOX)
+    app_trans_id = models.CharField("Mã giao dịch gửi ZaloPay (app_trans_id)", max_length=40, unique=True, null=True, blank=True)
+    zp_trans_id = models.BigIntegerField("Mã giao dịch ZaloPay (zp_trans_id)", null=True, blank=True)
+    order_url = models.CharField("Địa chỉ trang thanh toán ZaloPay", max_length=1000, blank=True)
     group = models.ForeignKey(OrderGroup, on_delete=models.PROTECT, related_name="transactions")
     amount = models.DecimalField("Số tiền", max_digits=12, decimal_places=0)
     status = models.CharField("Trạng thái", max_length=16, choices=STATUS, default=PENDING, db_index=True)
@@ -281,3 +290,36 @@ class PaymentTransaction(models.Model):
 
     def __str__(self):
         return f"{self.ref} ({self.get_status_display()})"
+
+
+class RefundRecord(models.Model):
+    """Một lần gọi hoàn tiền qua ZaloPay (/v2/refund). Lưu TRƯỚC khi gọi API để không hoàn tiền hai lần.
+    order rỗng: hoàn tiền cho giao dịch Thanh toán muộn (hoàn toàn bộ số tiền của giao dịch)."""
+    PENDING, SUCCESS, FAILED = "DANG_XU_LY", "THANH_CONG", "THAT_BAI"
+    STATUS = [(PENDING, "Đang xử lý"), (SUCCESS, "Thành công"), (FAILED, "Thất bại")]
+
+    txn = models.ForeignKey(PaymentTransaction, on_delete=models.PROTECT, related_name="refunds")
+    order = models.ForeignKey(Order, null=True, blank=True, on_delete=models.SET_NULL, related_name="refunds")
+    m_refund_id = models.CharField("Mã hoàn tiền của hệ thống", max_length=45, unique=True)
+    amount = models.DecimalField("Số tiền hoàn", max_digits=12, decimal_places=0)
+    zp_refund_id = models.BigIntegerField("Mã hoàn tiền ZaloPay", null=True, blank=True)
+    status = models.CharField(max_length=12, choices=STATUS, default=PENDING, db_index=True)
+    message = models.CharField(max_length=255, blank=True)
+    created = models.DateTimeField(default=timezone.now)
+    updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created", "-id"]
+        verbose_name = "Hoàn tiền ZaloPay"
+        verbose_name_plural = "Hoàn tiền ZaloPay"
+        constraints = [
+            # mỗi đơn chỉ có một lần hoàn tiền đang xử lý hoặc đã thành công
+            models.UniqueConstraint(fields=["order"], name="uq_refund_one_open_per_order",
+                                    condition=Q(order__isnull=False, status__in=["DANG_XU_LY", "THANH_CONG"])),
+            # mỗi giao dịch thanh toán muộn chỉ hoàn một lần
+            models.UniqueConstraint(fields=["txn"], name="uq_refund_one_open_per_late_txn",
+                                    condition=Q(order__isnull=True, status__in=["DANG_XU_LY", "THANH_CONG"])),
+        ]
+
+    def __str__(self):
+        return f"{self.m_refund_id} ({self.get_status_display()})"

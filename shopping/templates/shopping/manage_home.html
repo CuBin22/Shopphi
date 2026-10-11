@@ -1,0 +1,19 @@
+{% extends "catalog/base.html" %}
+{% block content %}
+<div class="resulthead"><h1>Kênh quản lý</h1></div>
+{% if role == 'NGUOI_BAN' %}
+  {% if not shop %}
+    <div class="empty"><p><strong>Bạn chưa có gian hàng.</strong></p><p>Đăng ký gian hàng để Quản trị viên xét duyệt trước khi đăng bán.</p><a class="btn" href="{% url 'shop_register' %}">Đăng ký gian hàng</a></div>
+  {% else %}
+    <p><strong>{{ shop.name }}</strong> - trạng thái: <span class="pill">{{ shop.get_status_display }}</span>{% if shop.status_reason %} ({{ shop.status_reason }}){% endif %}</p>
+    {% if shop.status != 'HOAT_DONG' %}<p class="msg msg--warning">Gian hàng chưa ở trạng thái Hoạt động nên chưa đăng bán và chưa nhận đơn mới.</p>{% endif %}
+    <div class="catgrid">{% for label, n, key in counts %}<a class="catbox tile--do-cong-nghe" href="{% url 'vendor_orders' %}?trang_thai={{ key }}"><span class="catbox__name">{{ label }}: {{ n }}</span></a>{% endfor %}</div>
+    {% if pending_cancel %}<p class="msg msg--warning">{{ pending_cancel }} yêu cầu hủy đang chờ bạn xử lý.</p>{% endif %}
+  {% endif %}
+  {% if shop and shop.status == 'TU_CHOI' %}<p><a class="btn" href="{% url 'shop_edit' %}">Sửa thông tin và gửi lại xét duyệt</a></p>{% endif %}
+  <p class="actions"><a class="btn" href="{% url 'product_list' %}">Sản phẩm</a> <a class="btn btn--ghost" href="{% url 'vendor_orders' %}">Đơn hàng</a> <a class="btn btn--ghost" href="{% url 'coupons' %}">Mã giảm giá</a> <a class="btn btn--ghost" href="{% url 'stats' %}">Thống kê</a></p>
+{% else %}
+  <p>Gian hàng đang chờ duyệt: <strong>{{ shops_pending }}</strong></p>
+  <p class="actions"><a class="btn" href="{% url 'admin_shops' %}">Duyệt / khóa gian hàng</a> <a class="btn btn--ghost" href="{% url 'admin_products' %}">Gỡ / khôi phục sản phẩm</a> <a class="btn btn--ghost" href="{% url 'admin_keywords' %}">Từ khóa gợi ý</a> <a class="btn btn--ghost" href="{% url 'refunds' %}">Hoàn tiền (mô phỏng)</a> <a class="btn btn--ghost" href="{% url 'admin_logs' %}">Nhật ký quản trị</a> <a class="btn btn--ghost" href="{% url 'coupons' %}">Mã giảm giá toàn sàn</a> <a class="btn btn--ghost" href="{% url 'stats' %}">Thống kê toàn sàn</a></p>
+{% endif %}
+{% endblock %}

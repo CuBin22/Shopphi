@@ -1,0 +1,40 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Giỏ hàng - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>Giỏ hàng</h1></div>
+{% if shops %}
+  {% for s in shops %}
+  <section class="cartshop">
+    <h2>{{ s.shop.name }}</h2>
+    {% for l in s.lines %}
+    <div class="line">
+      <div class="tile tile--{{ l.v.product.category.slug }} tone-{{ l.v.product.pk|tone }} tile--thumb">{% if l.v.product.image %}<img class="tile__image" src="{{ l.v.product.image.url }}" alt="{{ l.v.product.name }}" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=l.v.product.category.slug %}{% endif %}</div>
+      <div class="line__main">
+        <a href="{{ l.v.product.get_absolute_url }}">{{ l.v.product.name }}</a>
+        <p class="shop">{{ l.v.name }} &middot; Tồn khả dụng: {{ l.v.stock }}</p>
+        {% if l.over %}<p class="warn">Số lượng vượt tồn kho, tối đa {{ l.v.stock }}.</p>{% endif %}
+      </div>
+      <form method="post" action="{% url 'cart_update' %}" class="line__qty">{% csrf_token %}
+        <input type="hidden" name="variant" value="{{ l.v.pk }}">
+        <label class="sr" for="qty-{{ l.v.pk }}">Số lượng</label>
+        <input id="qty-{{ l.v.pk }}" type="number" name="qty" min="1" value="{{ l.qty }}">
+        <button class="btn btn--small btn--ghost" type="submit">Cập nhật</button>
+      </form>
+      <p class="price">{{ l.total|vnd }}</p>
+      <form method="post" action="{% url 'cart_remove' %}">{% csrf_token %}<input type="hidden" name="variant" value="{{ l.v.pk }}"><button class="linkbtn" type="submit">Xóa</button></form>
+    </div>
+    {% endfor %}
+    <p class="subtotal">Tạm tính của gian hàng: <strong>{{ s.subtotal|vnd }}</strong></p>
+  </section>
+  {% endfor %}
+  <section class="summary">
+    <p>Giảm giá và phí vận chuyển tính ở bước đặt hàng.</p>
+    <p class="summary__total">Tạm tính: <strong>{{ grand|vnd }}</strong></p>
+    <a class="btn" href="{% url 'checkout' %}">Đặt hàng</a>
+  </section>
+{% else %}
+  <div class="empty"><p><strong>Giỏ hàng đang trống.</strong></p><p>Chọn vài sản phẩm để bắt đầu.</p>
+  <p><a class="btn" href="{% url 'home' %}">Xem sản phẩm gợi ý</a></p></div>
+{% endif %}
+{% endblock %}

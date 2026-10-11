@@ -9,7 +9,7 @@ from accounts.models import Profile
 from accounts.utils import role_required
 from catalog.models import AdminLog, Keyword, Product, Shop
 
-from . import moderation, services
+from . import moderation, payments, services
 from .models import Order, PaymentTransaction
 from .services import OrderError
 
@@ -83,20 +83,24 @@ def keywords_review(request):
 
 @admin_only
 def refunds(request):
-    """Hoàn tiền mô phỏng trong Sandbox: Chờ hoàn tiền -> Đã hoàn tiền."""
+    """Hoàn tiền: đơn/giao dịch ZaloPay gọi API /v2/refund; giao dịch cổng giả lập thì hoàn tiền mô phỏng."""
     if request.method == "POST":
         try:
             if request.POST.get("kind") == "txn":
-                services.complete_late_refund(request.POST.get("id"), request.user)
+                outcome = payments.refund_late_transaction(request.POST.get("id"), request.user)
             else:
-                services.complete_refund(request.POST.get("id"), request.user)
-            messages.success(request, "Đã hoàn tiền (mô phỏng Sandbox).")
+                outcome = payments.refund_order(request.POST.get("id"), request.user)
+            if outcome == "DA_HOAN_TIEN":
+                messages.success(request, "Đã hoàn tiền.")
+            else:
+                messages.info(request, "ZaloPay đang xử lý hoàn tiền. Bấm Hoàn tiền lần nữa sau ít phút để kiểm tra kết quả.")
         except OrderError as e:
             messages.error(request, str(e))
         return redirect("refunds")
     return render(request, "shopping/admin_refunds.html", {
-        "orders": Order.objects.filter(payment_status=Order.REFUND_WAIT).select_related("shop", "group"),
+        "orders": Order.objects.filter(payment_status=Order.REFUND_WAIT).select_related("shop", "group", "payment_txn"),
         "txns": PaymentTransaction.objects.filter(refund_status=PaymentTransaction.REFUND_WAIT).select_related("group")})
+
 
 
 @admin_only

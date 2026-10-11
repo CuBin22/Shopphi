@@ -1,0 +1,15 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn hàng của tôi - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>Đơn hàng của tôi</h1></div>
+{% for g in groups %}
+<section class="cartshop">
+  <h2>Nhóm đơn #{{ g.pk }} <span class="shop">{{ g.created|date:"d/m/Y H:i" }} &middot; {{ g.total|vnd }}</span></h2>
+  {% for o in g.orders.all %}
+  <p class="row"><a href="{% url 'order_detail' o.pk %}">Đơn #{{ o.pk }} - {{ o.shop.name }} ({{ o.items.all|length }} dòng)</a>
+  <span>{% include "shopping/_status.html" %} <strong>{{ o.total|vnd }}</strong></span></p>
+  {% endfor %}
+</section>
+{% empty %}<div class="empty"><p><strong>Chưa có đơn hàng.</strong></p><p><a class="btn" href="{% url 'home' %}">Mua sắm ngay</a></p></div>{% endfor %}
+{% endblock %}

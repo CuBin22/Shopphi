@@ -1,0 +1,30 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="resulthead"><h1>Đơn #{{ o.pk }}</h1><p>{% include "shopping/_status.html" %}</p></div>
+<section class="cartshop">
+  {% for i in items %}<p class="row"><span>{{ i.product_name }} - {{ i.variant_name }} &times; {{ i.qty }}</span><strong>{{ i.line_total|vnd }}</strong></p>{% endfor %}
+  <p class="row"><span>Tạm tính / giảm giá / vận chuyển</span><span>{{ o.subtotal|vnd }} / -{{ o.discount|vnd }} / {{ o.shipping_fee|vnd }}</span></p>
+  <p class="row"><strong>Tổng</strong><strong>{{ o.total|vnd }}</strong></p>
+  <p class="shop">Giao tới: {{ o.group.recipient_name }}, {{ o.group.recipient_phone }}, {{ o.group.address }} ({{ o.group.get_payment_method_display }})</p>
+  {% if o.tracking_code %}<p class="shop">{{ o.carrier }} - {{ o.tracking_code }}</p>{% endif %}
+  {% if o.status == 'DA_HUY' %}<p class="warn">Đã hủy: {{ o.cancel_reason }}</p>{% endif %}
+</section>
+{% if pending %}
+<section class="formcard"><h2>Yêu cầu hủy từ khách hàng</h2><p>Lý do: {{ pending.reason }} <span class="shop">(gửi {{ pending.created|date:"d/m H:i" }}, tự chấp nhận sau 24 giờ)</span></p>
+  <form method="post" class="actions">{% csrf_token %}<button class="btn" name="action" value="accept_cancel">Chấp nhận hủy</button></form>
+  <form method="post">{% csrf_token %}<label>Lý do từ chối<input name="reject_reason"></label><button class="btn btn--ghost" name="action" value="reject_cancel">Từ chối</button></form></section>
+{% endif %}
+{% if o.status == 'CHO_XAC_NHAN' %}<form method="post">{% csrf_token %}<button class="btn" name="action" value="confirm">Xác nhận đơn</button></form>{% endif %}
+{% if o.status == 'DA_XAC_NHAN' %}
+<form method="post" class="formcard">{% csrf_token %}<h2>Giao hàng</h2>
+  <label>Đơn vị vận chuyển<input name="carrier" placeholder="GHN, GHTK..."></label><label>Mã vận đơn (duy nhất)<input name="tracking"></label>
+  <button class="btn" name="action" value="ship">Chuyển sang Đang giao</button></form>
+{% endif %}
+{% if o.status == 'CHO_XAC_NHAN' or o.status == 'DA_XAC_NHAN' %}
+<form method="post" class="formcard">{% csrf_token %}<h2>Hủy đơn (bắt buộc ghi lý do)</h2>
+  <label>Lý do<input name="reason" placeholder="Ví dụ: hết hàng"></label><button class="btn btn--ghost" name="action" value="cancel">Hủy đơn</button></form>
+{% endif %}
+<section class="block"><div class="block__head"><h2>Nhật ký trạng thái</h2></div>
+<ul class="timeline">{% for l in logs %}<li>{{ l.at|date:"d/m/Y H:i" }}: {{ l.old_status }} &rarr; <strong>{{ l.new_status }}</strong> {{ l.note }} ({{ l.actor.first_name|default:l.actor.username|default:"Hệ thống" }})</li>{% endfor %}</ul></section>
+{% endblock %}

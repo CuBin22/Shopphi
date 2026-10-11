@@ -8,6 +8,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
+from shopping import payments
 from shopping.services import run_timeouts
 
 
@@ -19,7 +20,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         while True:
+            try:
+                chot = payments.reconcile_pending()     # đối soát giao dịch ZaloPay còn chờ (phòng callback bị lỡ)
+            except Exception as e:  # noqa: BLE001
+                chot = 0
+                self.stderr.write(f"Đối soát ZaloPay lỗi: {e}")
             accepted, completed = run_timeouts()
+            self.stdout.write(f"Đối soát ZaloPay đã chốt: {chot}")
             self.stdout.write(f"Tự chấp nhận hủy: {accepted}; tự hoàn thành: {completed}")
             if not opts["loop"]:
                 break

@@ -1,0 +1,6 @@
+{% extends "catalog/base.html" %}
+{% block content %}
+<div class="resulthead"><h1>Thông báo</h1></div>
+{% for n in items %}<p class="msg {% if n.was_unread %}msg--warning{% endif %}">{% if n.link %}<a href="{{ n.link }}">{{ n.content }}</a>{% else %}{{ n.content }}{% endif %} <span class="shop">{{ n.created|date:"d/m H:i" }}</span></p>
+{% empty %}<div class="empty"><p>Chưa có thông báo.</p></div>{% endfor %}
+{% endblock %}

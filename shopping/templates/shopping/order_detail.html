@@ -1,0 +1,46 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn #{{ o.pk }} - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>Đơn #{{ o.pk }}</h1><p>{% include "shopping/_status.html" %} &middot; {{ o.shop.name }}</p></div>
+<section class="cartshop">
+  <h2>Sản phẩm</h2>
+  {% for i in items %}
+  <div class="row"><span>{{ i.product_name }} - {{ i.variant_name }} &times; {{ i.qty }} <span class="shop">({{ i.unit_price|vnd }} / sản phẩm)</span></span><strong>{{ i.line_total|vnd }}</strong></div>
+  {% if o.status == 'HOAN_THANH' %}
+    {% if i.reviewed %}<p class="shop">Bạn đã đánh giá sản phẩm này.</p>
+    {% else %}
+    <form method="post" action="{% url 'review_create' o.pk i.product.pk %}" class="reviewform">{% csrf_token %}
+      <label>Số sao <select name="rating">{% for n in "54321" %}<option value="{{ n }}">{{ n }} sao</option>{% endfor %}</select></label>
+      <input name="comment" placeholder="Bình luận (không bắt buộc)" maxlength="1000">
+      <button class="btn btn--small btn--ghost" type="submit">Đánh giá</button>
+    </form>{% endif %}
+  {% endif %}
+  {% endfor %}
+  <p class="row"><span>Tạm tính</span><span>{{ o.subtotal|vnd }}</span></p>
+  <p class="row"><span>Giảm giá</span><span>- {{ o.discount|vnd }}</span></p>
+  <p class="row"><span>Phí vận chuyển</span><span>{{ o.shipping_fee|vnd }}</span></p>
+  <p class="row"><strong>Tổng thanh toán</strong><strong>{{ o.total|vnd }}</strong></p>
+  {% if can_pay %}<form method="post" action="{% url 'pay_group' o.group_id %}">{% csrf_token %}<button class="btn" type="submit">Thanh toán trực tuyến ({{ provider_label }})</button>
+    {% if o.group.hold_until %}<span class="shop">Hạn giữ kho: {{ o.group.hold_until|date:"H:i d/m/Y" }}</span>{% endif %}</form>{% endif %}
+  <p class="shop">Giao tới: {{ o.group.recipient_name }}, {{ o.group.recipient_phone }}, {{ o.group.address }}</p>
+  {% if o.tracking_code %}<p class="shop">Vận chuyển: {{ o.carrier }} - mã vận đơn {{ o.tracking_code }}</p>{% endif %}
+  {% if o.status == 'DA_HUY' %}<p class="warn">Đã hủy. Lý do: {{ o.cancel_reason }}</p>{% endif %}
+</section>
+
+{% if o.status == 'DANG_GIAO' %}
+<form method="post" action="{% url 'order_received' o.pk %}" class="actions">{% csrf_token %}<button class="btn" type="submit">Đã nhận hàng</button><span class="shop">Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.</span></form>
+{% endif %}
+{% if pending %}<p class="msg msg--warning">Yêu cầu hủy của bạn đang chờ Người bán xử lý (tự chấp nhận sau 24 giờ).</p>{% endif %}
+{% for r in requests %}{% if r.result == 'TU_CHOI' %}<p class="msg msg--error">Yêu cầu hủy bị từ chối. Lý do: {{ r.reject_reason }}</p>{% endif %}{% endfor %}
+{% if can_cancel %}
+<form method="post" action="{% url 'order_cancel' o.pk %}" class="formcard">{% csrf_token %}
+  <h2>Hủy đơn</h2>
+  <p class="shop">{% if o.status == 'CHO_XAC_NHAN' %}Đơn đang Chờ xác nhận: hủy ngay.{% else %}Đơn đã xác nhận: gửi yêu cầu để Người bán chấp nhận hoặc từ chối.{% endif %}</p>
+  <label>Lý do hủy<input name="reason" required maxlength="255"></label>
+  <button class="btn btn--ghost" type="submit">{% if o.status == 'CHO_XAC_NHAN' %}Hủy đơn{% else %}Gửi yêu cầu hủy{% endif %}</button>
+</form>
+{% endif %}
+<section class="block"><div class="block__head"><h2>Nhật ký trạng thái</h2></div>
+<ul class="timeline">{% for l in logs %}<li>{{ l.at|date:"d/m/Y H:i" }}: {% if l.old_status %}{{ l.old_status }} &rarr; {% endif %}<strong>{{ l.new_status }}</strong> {{ l.note }} <span class="shop">({{ l.actor.first_name|default:l.actor.username|default:"Hệ thống" }})</span></li>{% endfor %}</ul></section>
+{% endblock %}
