@@ -1,0 +1,41 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn #{{ o.pk }} - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "receipt" %}Đơn #{{ o.pk }}</h1><p>{% include "shopping/_status.html" %}</p></div>
+<div class="dash__cols">
+<div class="dash">
+<section class="panel">
+  <div class="panel__head"><h2>{% icon "package" %}Sản phẩm</h2></div>
+  {% for i in items %}<p class="row"><span>{% include "shopping/_thumb.html" with product=i.variant.product %}{{ i.product_name }}, {{ i.variant_name }} &times; {{ i.qty }}</span><strong>{{ i.line_total|vnd }}</strong></p>{% endfor %}
+  <p class="row"><span>Tạm tính</span><span>{{ o.subtotal|vnd }}</span></p>
+  <p class="row"><span>Giảm giá</span><span>- {{ o.discount|vnd }}</span></p>
+  <p class="row"><span>Phí vận chuyển</span><span>{{ o.shipping_fee|vnd }}</span></p>
+  <p class="row"><strong>Tổng</strong><strong>{{ o.total|vnd }}</strong></p>
+  <p class="shop">{% icon "map-pin" %}Giao tới: {{ o.group.recipient_name }}, {{ o.group.recipient_phone }}, {{ o.group.address }} ({{ o.group.get_payment_method_display }})</p>
+  {% if o.tracking_code %}<p class="shop">{% icon "truck" %}{{ o.carrier }} - {{ o.tracking_code }}</p>{% endif %}
+  {% if o.status == 'DA_HUY' %}<p class="warn">Đã hủy: {{ o.cancel_reason }}</p>{% endif %}
+</section>
+<section class="panel"><div class="panel__head"><h2>{% icon "history" %}Nhật ký trạng thái</h2></div>
+<ul class="timeline">{% for l in logs %}<li>{{ l.at|date:"d/m/Y H:i" }}: {% if l.old_status and l.old_status != l.new_status %}{{ l.old_status|order_status }} &rarr; {% endif %}<strong>{{ l.new_status|order_status }}</strong>{% if l.note %} &middot; {{ l.note }}{% endif %} <span class="shop">({{ l.actor|actor_name }})</span></li>{% endfor %}</ul></section>
+</div>
+<div class="dash">
+{% if pending %}
+<section class="formcard" style="max-width:none"><h2>{% icon "undo" %} Yêu cầu hủy từ khách hàng</h2><p>Lý do: {{ pending.reason }} <span class="shop">(gửi {{ pending.created|date:"d/m H:i" }}, tự chấp nhận sau 24 giờ)</span></p>
+  <form method="post" class="actions">{% csrf_token %}<button class="btn" name="action" value="accept_cancel">{% icon "check" %}Chấp nhận hủy</button></form>
+  <form method="post">{% csrf_token %}<label>Lý do từ chối<input name="reject_reason"></label><button class="btn btn--ghost" name="action" value="reject_cancel">Từ chối</button></form></section>
+{% endif %}
+{% if o.status == 'CHO_XAC_NHAN' %}<form method="post">{% csrf_token %}<button class="btn btn--lg btn--block" name="action" value="confirm">{% icon "circle-check" %}Xác nhận đơn</button></form>{% endif %}
+{% if o.status == 'DA_XAC_NHAN' or o.status == 'DANG_GIAO' %}<p><a class="btn btn--ghost btn--block" href="{% url 'packing_slip' o.pk %}" target="_blank" rel="noopener">{% icon "printer" %}In phiếu giao vận</a></p>{% endif %}
+{% if o.status == 'DA_XAC_NHAN' %}
+<form method="post" class="formcard" style="max-width:none">{% csrf_token %}<h2>{% icon "truck" %} Giao hàng</h2>
+  <label>Đơn vị vận chuyển<input name="carrier" placeholder="GHN, GHTK..."></label><label>Mã vận đơn (duy nhất)<input name="tracking"></label>
+  <button class="btn" name="action" value="ship">Chuyển sang Đang giao</button></form>
+{% endif %}
+{% if o.status == 'CHO_XAC_NHAN' or o.status == 'DA_XAC_NHAN' %}
+<form method="post" class="formcard" style="max-width:none">{% csrf_token %}<h2>Hủy đơn</h2><p class="shop">Bắt buộc ghi lý do.</p>
+  <label>Lý do<input name="reason" placeholder="Ví dụ: hết hàng"></label><button class="btn btn--danger" name="action" value="cancel">Hủy đơn</button></form>
+{% endif %}
+</div>
+</div>
+{% endblock %}

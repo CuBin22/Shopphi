@@ -1,0 +1,13 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "percent" %}Mã {{ c.code }}</h1><p>{{ c.label }}, đơn tối thiểu {{ c.min_order|vnd }}, đã dùng {{ c.used_count }}/{{ c.max_uses }}</p></div>
+{% if not c.is_active %}<p class="msg msg--warning">Mã đang tạm ngưng, không áp dụng được cho đơn mới.</p>{% endif %}
+{% if can_manage %}<p class="actions"><a class="btn btn--small" href="{% url 'coupon_edit' c.pk %}">{% icon "pencil" %}Sửa mã</a>
+<form method="post" action="{% url 'coupon_toggle' c.pk %}" class="inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}"><button class="btn btn--small btn--ghost" type="submit">{% if c.is_active %}Tạm ngưng{% else %}Bật lại{% endif %}</button></form>
+<form method="post" action="{% url 'coupon_delete' c.pk %}" class="inline" onsubmit="return confirm('Xóa mã này?')">{% csrf_token %}<button class="btn btn--small btn--ghost" type="submit">Xóa</button></form></p>{% endif %}
+<div class="tablewrap"><table class="tbl"><thead><tr><th>Mã đơn / nhóm</th><th>Khách hàng</th><th>Thời điểm</th><th>Số tiền giảm</th><th>Hoàn lượt</th></tr></thead><tbody>
+{% for u in uses %}<tr><td>{% if u.order %}Đơn #{{ u.order_id }}{% else %}Nhóm #{{ u.group_id }}{% endif %}</td><td>{{ u.user.first_name|default:u.user.username }}</td><td>{{ u.created|date:"d/m/Y H:i" }}</td><td>{{ u.amount|vnd }}</td><td>{{ u.refunded|yesno:"Có,Không" }}</td></tr>
+{% empty %}<tr><td colspan="5">Chưa có lượt áp dụng.</td></tr>{% endfor %}</tbody></table></div>
+<p><a class="textlink" href="{% url 'coupons' %}">{% icon "arrow-left" %}Danh sách mã</a></p>
+{% endblock %}

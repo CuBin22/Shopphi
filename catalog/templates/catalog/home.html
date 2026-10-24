@@ -1,0 +1,97 @@
+{% extends "catalog/base.html" %}
+{% load static shop_extras %}
+{% block bodyclass %}is-home{% endblock %}
+{% block hero %}
+<section class="store-intro" aria-label="Khám phá Shopphi">
+  <div class="wrap">
+    <h1 class="sr">Shopphi — Mua sắm từ nhiều gian hàng</h1>
+    <div class="showcase">
+      <section class="carousel" data-carousel aria-roledescription="băng chuyền" aria-label="Sản phẩm nổi bật">
+        <div class="carousel__slides" aria-live="off">
+          {% for p in banner_products|slice:":3" %}
+          <article class="spotlight" data-slide role="group" aria-roledescription="trang" aria-label="{{ forloop.counter }} / {{ banner_products|slice:':3'|length }}" {% if not forloop.first %}hidden{% endif %}>
+            <div class="spotlight__copy">
+              <span class="eyebrow">SHOPPHI · KHÁM PHÁ MỖI NGÀY</span>
+              <p class="spotlight__category">{{ p.category.name }}</p>
+              <h2>{{ p.name }}</h2>
+              <p class="spotlight__shop">Từ gian hàng {{ p.shop.name }}</p>
+              <p class="spotlight__price">{{ p.price|vnd }}</p>
+              <a class="spotlight__cta" href="{{ p.get_absolute_url }}">Khám phá ngay {% icon "chevron-right" %}</a>
+            </div>
+            <a class="spotlight__image" href="{{ p.get_absolute_url }}" tabindex="-1" aria-hidden="true"><img src="{{ p.image.url }}" alt="" {% if forloop.first %}fetchpriority="high"{% endif %}></a>
+          </article>
+          {% empty %}
+          <article class="spotlight spotlight--empty">
+            <div class="spotlight__copy"><span class="eyebrow">CHÀO MỪNG ĐẾN SHOPPHI</span><h2>Khám phá gian hàng</h2><p>Tìm món bạn cần, chọn điều bạn thích.</p><a class="spotlight__cta" href="{% url 'search' %}">Xem sản phẩm {% icon "chevron-right" %}</a></div>
+            <div class="spotlight__placeholder">{% icon "store" %}</div>
+          </article>
+          {% endfor %}
+        </div>
+        {% if banner_products|length > 1 %}
+        <div class="carousel__controls" hidden data-carousel-controls>
+          <button type="button" class="carousel__arrow" data-carousel-prev aria-label="Banner trước">‹</button>
+          <div class="carousel__dots">
+            {% for p in banner_products|slice:":3" %}<button type="button" data-carousel-dot aria-label="Xem banner {{ forloop.counter }}" aria-current="{% if forloop.first %}true{% else %}false{% endif %}"></button>{% endfor %}
+          </div>
+          <button type="button" class="carousel__arrow" data-carousel-next aria-label="Banner tiếp theo">›</button>
+          <button type="button" class="carousel__pause" data-carousel-pause aria-label="Tạm dừng tự chuyển banner">Tạm dừng</button>
+        </div>
+        {% endif %}
+      </section>
+      <aside class="showcase__side" aria-label="Khám phá thêm">
+        {% for p in banner_products|slice:"3:5" %}
+        <a class="side-promo" href="{{ p.get_absolute_url }}">
+          <div><span class="eyebrow">{{ p.category.name }}</span><h2>{{ p.name }}</h2><p>{{ p.price|vnd }}</p><span class="side-promo__link">Xem ngay →</span></div>
+          <img src="{{ p.image.url }}" alt="{{ p.name }}">
+        </a>
+        {% empty %}
+        <a class="side-promo side-promo--fallback" href="{% url 'search' %}"><div><span class="eyebrow">MUA SẮM THẬT DỄ</span><h2>Mọi lựa chọn,<br>trong một nơi</h2><span class="side-promo__link">Khám phá sản phẩm →</span></div>{% icon "package" %}</a>
+        <a class="side-promo side-promo--fallback" href="{% url 'shop_register' %}"><div><span class="eyebrow">ĐỒNG HÀNH CÙNG SHOPPHI</span><h2>Gian hàng của bạn</h2><span class="side-promo__link">Bắt đầu bán hàng →</span></div>{% icon "store" %}</a>
+        {% endfor %}
+      </aside>
+    </div>
+    <nav class="quick-links" aria-label="Truy cập nhanh">
+      {% for c in nav_categories %}<a href="{% url 'search' %}?danh_muc={{ c.slug }}"><span>{% include "catalog/_glyph.html" with slug=c.slug %}</span>{{ c.name }}</a>{% endfor %}
+      <a href="{% url 'search' %}?sap_xep=moi"><span>{% icon "sparkles" %}</span>Sản phẩm mới</a>
+      <a href="{% url 'my_orders' %}"><span>{% icon "package" %}</span>Đơn hàng của tôi</a>
+      <a href="{% url 'shop_register' %}"><span>{% icon "store" %}</span>Mở gian hàng</a>
+    </nav>
+  </div>
+</section>
+{% endblock %}
+{% block content %}
+<section class="category-panel" aria-labelledby="h-categories">
+  <div class="section-heading"><h2 id="h-categories">DANH MỤC</h2><a href="{% url 'search' %}">Xem tất cả →</a></div>
+  <div class="category-grid">
+    {% for c in nav_categories %}<a href="{% url 'search' %}?danh_muc={{ c.slug }}"><span class="category-grid__icon">{% include "catalog/_glyph.html" with slug=c.slug %}</span><strong>{{ c.name }}</strong><span>Khám phá ngay →</span></a>{% empty %}<p class="empty">Các danh mục sẽ được cập nhật tại đây.</p>{% endfor %}
+  </div>
+</section>
+<section class="block" aria-labelledby="h-goiy">
+  <div class="block__head">
+    <h2 id="h-goiy">GỢI Ý HÔM NAY</h2>
+    <p>{% if personal %}Dựa trên sản phẩm bạn đã xem và thêm vào giỏ{% else %}Sản phẩm được quan tâm nhiều trên sàn. Xem thêm vài sản phẩm để gợi ý khớp với bạn hơn.{% endif %}</p>
+  </div>
+  {% if recommended %}
+  <div class="grid">
+    {% for p in recommended %}{% include "catalog/_card.html" with nguon="goi-y" %}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty"><span class="empty__ico">{% icon "sparkles" %}</span><p>Chưa có sản phẩm nào để gợi ý. Hãy quay lại khi các gian hàng cập nhật sản phẩm.</p></div>
+  {% endif %}
+</section>
+
+<section class="block" aria-labelledby="h-all">
+  <div class="block__head">
+    <h2 id="h-all">Tất cả sản phẩm</h2>
+    <p>{{ all_total }} sản phẩm đang bán. <a class="textlink" href="{% url 'search' %}">Xem tất cả{% icon "chevron-right" %}</a></p>
+  </div>
+  {% if all_products %}
+  <div class="grid">
+    {% for p in all_products %}{% include "catalog/_card.html" with nguon="trang-chu" %}{% endfor %}
+  </div>
+  {% if all_total > 12 %}<p class="more"><a class="btn btn--ghost" href="{% url 'search' %}">Xem tất cả {{ all_total }} sản phẩm</a></p>{% endif %}
+  {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>Chưa có sản phẩm nào đang bán.</p></div>{% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}<script src="{% static 'catalog/js/carousel.js' %}" defer></script>{% endblock %}

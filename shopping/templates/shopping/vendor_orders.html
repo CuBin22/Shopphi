@@ -1,0 +1,35 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn hàng - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "receipt" %}Đơn hàng</h1><p>{{ shop.name }}: {{ page.paginator.count }} đơn</p></div>
+<form method="get" class="filters">
+  <label>Tìm đơn<input name="q" value="{{ q }}" placeholder="Mã đơn, tên / SĐT người nhận, mã vận đơn" style="min-width:300px"></label>
+  <label>Thanh toán<select name="thanh_toan"><option value="">Mọi trạng thái</option>{% for k, l in pay_statuses %}<option value="{{ k }}" {% if pay == k %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+  <label>Từ ngày<input type="date" name="tu_ngay" value="{{ d_from }}"></label>
+  <label>Đến ngày<input type="date" name="den_ngay" value="{{ d_to }}"></label>
+  <input type="hidden" name="trang_thai" value="{{ status }}">
+  <button class="btn" type="submit">{% icon "filter" %}Lọc</button>
+  <a class="btn btn--ghost" href="{% url 'vendor_orders' %}">Xóa lọc</a>
+</form>
+<nav class="cats" aria-label="Lọc theo trạng thái"><a href="?q={{ q }}&amp;thanh_toan={{ pay }}&amp;tu_ngay={{ d_from }}&amp;den_ngay={{ d_to }}" {% if not status %}aria-current="page"{% endif %}>Tất cả</a>
+{% for k, l in statuses %}<a href="?trang_thai={{ k }}&amp;q={{ q }}&amp;thanh_toan={{ pay }}&amp;tu_ngay={{ d_from }}&amp;den_ngay={{ d_to }}" {% if status == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+{% if orders %}
+<div class="tablewrap"><table class="tbl">
+  <thead><tr><th>Đơn</th><th>Người nhận</th><th>Ngày đặt</th><th>Trạng thái</th><th class="num">Tổng</th><th></th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+  <tr>
+    <td><a class="textlink" href="{% url 'vendor_order_detail' o.pk %}">Đơn #{{ o.pk }}</a></td>
+    <td>{{ o.group.recipient_name }}</td>
+    <td>{{ o.created|date:"d/m H:i" }}</td>
+    <td>{% if o.has_pending %}<span class="pill pill--warn">Yêu cầu hủy</span> {% endif %}{% include "shopping/_status.html" %}</td>
+    <td class="num"><b>{{ o.total|vnd }}</b></td>
+    <td class="num">{% if o.status == 'DA_XAC_NHAN' or o.status == 'DANG_GIAO' %}<a class="btn btn--small btn--ghost" href="{% url 'packing_slip' o.pk %}" target="_blank" rel="noopener">{% icon "printer" %}In phiếu</a>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<div class="empty"><span class="empty__ico">{% icon "receipt" %}</span><p>Không có đơn hàng nào khớp.</p></div>{% endif %}
+{% include "shopping/_pager.html" %}
+{% endblock %}

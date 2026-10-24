@@ -1,0 +1,25 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đặt lại mật khẩu - Shopphi{% endblock %}
+{% block content %}
+<div class="auth">
+<div class="auth__card">
+  <span class="auth__ico">{% icon "lock" %}</span>
+  <h1>Đặt lại mật khẩu</h1>
+  <p>Nhập mã OTP đã gửi tới <strong>{{ masked }}</strong> và mật khẩu mới (tối thiểu 8 ký tự, gồm cả chữ và số).</p>
+  <form method="post">
+    {% csrf_token %}
+    <label>{{ form.otp.label }}<input type="text" name="otp" value="{{ form.otp.value|default:'' }}" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>{{ form.otp.errors }}
+    <label>{{ form.password.label }}{{ form.password }}</label>{{ form.password.errors }}
+    <label>{{ form.password2.label }}{{ form.password2 }}</label>{{ form.password2.errors }}
+    <button class="btn btn--lg btn--block" type="submit">Đổi mật khẩu</button>
+  </form>
+  <form method="post" action="{% url 'resend_otp' %}" class="auth__foot">
+    {% csrf_token %}
+    <p>Chưa nhận được mã? Chờ {{ resend_seconds }} giây rồi gửi lại. Mã cũ sẽ hết hiệu lực.</p>
+    <button class="btn btn--ghost" type="submit">Gửi lại mã</button>
+    <a class="btn btn--ghost" href="{% url 'forgot_password' %}">Đổi email / số điện thoại</a>
+  </form>
+</div>
+</div>
+{% endblock %}

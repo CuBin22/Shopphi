@@ -1,0 +1,40 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Thống kê và báo cáo - Shopphi{% endblock %}
+{% block manage %}
+<div class="dash">
+  <header class="dash__head">
+    <div><h1>Thống kê và báo cáo</h1><p>Chọn kỳ báo cáo để xem doanh thu, đơn hoàn thành, đơn hủy và tồn kho.</p></div>
+  </header>
+  <form method="get" class="filters" style="margin-bottom:0">
+    <label>Từ ngày<input type="date" name="tu_ngay" value="{{ d_from }}" max="{{ today }}"></label>
+    <label>Đến ngày<input type="date" name="den_ngay" value="{{ d_to }}" max="{{ today }}"></label>
+    {% if role == 'QUAN_TRI' %}<label>Gian hàng<select name="gian_hang"><option value="">Toàn sàn</option>{% for s in all_shops %}<option value="{{ s.pk }}" {% if shop_filter == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>{% endif %}
+    <button type="submit" class="btn">{% icon "filter" %}Xem</button>
+  </form>
+  {% if error %}<p class="msg msg--error">{{ error }}</p>{% else %}
+  <div class="kpis">
+    <div class="kpi kpi--accent"><p class="kpi__label">{% icon "wallet" %}Doanh thu</p><p class="kpi__value">{{ totals.revenue|vnd }}</p><p class="kpi__sub">Chưa gồm phí vận chuyển</p></div>
+    <div class="kpi"><p class="kpi__label">{% icon "circle-check" %}Đơn hoàn thành</p><p class="kpi__value">{{ totals.done }}<small>đơn</small></p><p class="kpi__sub">Trong kỳ báo cáo</p></div>
+    <div class="kpi"><p class="kpi__label">{% icon "ban" %}Đơn hủy</p><p class="kpi__value">{{ totals.cancel_manual|add:totals.cancel_auto }}<small>đơn</small></p><p class="kpi__sub">{{ totals.cancel_manual }} thủ công, {{ totals.cancel_auto }} tự động</p></div>
+    <div class="kpi"><p class="kpi__label">{% icon "warehouse" %}Tồn kho hiện tại</p><p class="kpi__value">{{ totals.stock }}<small>sản phẩm</small></p><p class="kpi__sub">Tại thời điểm xem</p></div>
+  </div>
+  {% include "shopping/_chart.html" with title="Doanh thu theo ngày" %}
+  <section class="panel">
+    <div class="panel__head"><h2>{% icon "store" %}Chi tiết theo gian hàng</h2></div>
+    <div class="tablewrap"><table class="tbl"><thead><tr><th>Gian hàng</th><th class="num">Đơn hoàn thành</th><th class="num">Doanh thu</th><th class="num">Hủy thủ công</th><th class="num">Hủy tự động</th><th class="num">Tồn kho hiện tại</th></tr></thead><tbody>
+    {% for r in rows %}<tr><td><b>{{ r.shop.name }}</b></td><td class="num">{{ r.done }}</td><td class="num">{{ r.revenue|vnd }}</td><td class="num">{{ r.cancel_manual }}</td><td class="num">{{ r.cancel_auto }}</td><td class="num">{{ r.stock }}</td></tr>
+    {% empty %}<tr><td colspan="6">Không có dữ liệu.</td></tr>{% endfor %}
+    {% if rows|length > 1 %}<tr class="total"><td>Tổng</td><td class="num">{{ totals.done }}</td><td class="num">{{ totals.revenue|vnd }}</td><td class="num">{{ totals.cancel_manual }}</td><td class="num">{{ totals.cancel_auto }}</td><td class="num">{{ totals.stock }}</td></tr>{% endif %}
+    </tbody></table></div>
+    <p class="shop">{% icon "info" %}Doanh thu là tạm tính trừ giảm giá của đơn Hoàn thành trong kỳ, không gồm phí vận chuyển. Tồn kho là số liệu tại thời điểm xem.</p>
+  </section>
+  {% endif %}
+  {% if keywords %}
+  <section class="panel">
+    <div class="panel__head"><h2>{% icon "hash" %}Từ khóa tìm kiếm phổ biến</h2><p>Tổng hợp ẩn danh</p></div>
+    <div class="tablewrap"><table class="tbl"><thead><tr><th>Từ khóa</th><th class="num">Lượt tìm</th><th class="num">Sản phẩm khớp</th></tr></thead><tbody>{% for k in keywords %}<tr><td><b>{{ k.phrase }}</b></td><td class="num">{{ k.frequency }}</td><td class="num">{{ k.match_count }}</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

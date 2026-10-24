@@ -1,0 +1,11 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>Sửa mã {{ c.code }}</h1>
+<p>{% if used %}Mã đã có {{ c.used_count }} lượt sử dụng: chỉ được gia hạn ngày hết hạn và tăng số lượt tối đa.{% else %}Mã chưa có lượt sử dụng nên sửa được mọi thông tin.{% endif %}</p></div>
+<form method="post" class="formcard">{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  <div class="actions"><button class="btn" type="submit">Lưu mã</button> <a class="btn btn--ghost" href="{% url 'coupon_detail' c.pk %}">Quay lại</a></div>
+</form>
+{% endblock %}

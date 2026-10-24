@@ -1,0 +1,145 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Bảng điều khiển - Shopphi{% endblock %}
+{% block manage %}
+{% if role == 'NGUOI_BAN' %}
+  {% if not shop %}
+    <div class="empty" style="margin-top:28px"><span class="empty__ico">{% icon "store" %}</span><strong>Bạn chưa có gian hàng.</strong><p>Đăng ký gian hàng để Quản trị viên xét duyệt trước khi đăng bán.</p><a class="btn" href="{% url 'shop_register' %}">Đăng ký gian hàng</a></div>
+  {% else %}
+  <div class="dash">
+    <header class="dash__head">
+      <div>
+        <h1>{{ shop.name }}</h1>
+        <p>Tình hình kinh doanh hôm nay và 30 ngày gần nhất.</p>
+      </div>
+      <p><span class="pill pill--{% if shop.status == 'HOAT_DONG' %}HOAN_THANH{% elif shop.status == 'CHO_DUYET' %}CHO_XAC_NHAN{% else %}DA_HUY{% endif %}">{{ shop.get_status_display }}</span>{% if shop.status_reason %} <span class="shop">{{ shop.status_reason }}</span>{% endif %}</p>
+    </header>
+
+    {% if shop.status != 'HOAT_DONG' %}<p class="msg msg--warning">Gian hàng chưa ở trạng thái Hoạt động nên chưa đăng bán và chưa nhận đơn mới.</p>{% endif %}
+    {% if shop.status == 'TU_CHOI' %}<p><a class="btn" href="{% url 'shop_edit' %}">{% icon "pencil" %}Sửa thông tin và gửi lại xét duyệt</a></p>{% endif %}
+
+    <div class="kpis">
+      <div class="kpi kpi--accent">
+        <p class="kpi__label">{% icon "wallet" %}Doanh thu hôm nay</p>
+        <p class="kpi__value">{{ kpi_today.revenue|vnd }}</p>
+        <p class="kpi__sub">{{ kpi_today.done }} đơn hoàn thành</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "trending-up" %}Doanh thu 30 ngày</p>
+        <p class="kpi__value">{{ kpi_month.revenue|vnd }}</p>
+        <p class="kpi__sub">{{ kpi_month.done }} đơn hoàn thành</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "package" %}Sản phẩm</p>
+        <p class="kpi__value">{{ n_products }}<small>sản phẩm</small></p>
+        <p class="kpi__sub">{{ n_visible }} đang hiển thị</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "ban" %}Đơn hủy 30 ngày</p>
+        <p class="kpi__value">{{ kpi_month.cancel_manual|add:kpi_month.cancel_auto }}<small>đơn</small></p>
+        <p class="kpi__sub">{{ kpi_month.cancel_manual }} thủ công, {{ kpi_month.cancel_auto }} tự động</p>
+      </div>
+    </div>
+
+    <div class="dash__cols">
+      {% include "shopping/_chart.html" with title="Doanh thu 30 ngày qua" %}
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "alert" %}Việc cần xử lý</h2></div>
+        <ul class="todo">
+          {% if pending_cancel %}<li><a href="{% url 'vendor_orders' %}"><span class="todo__ico todo__ico--danger">{% icon "undo" %}</span><span><b>{{ pending_cancel }} yêu cầu hủy đơn</b><small>Chấp nhận hoặc từ chối, tự chấp nhận sau 24 giờ</small></span>{% icon "chevron-right" %}</a></li>{% endif %}
+          {% if waiting_old %}<li><a href="{% url 'vendor_orders' %}?trang_thai=CHO_XAC_NHAN"><span class="todo__ico todo__ico--warn">{% icon "clock" %}</span><span><b>{{ waiting_old }} đơn chờ quá 24 giờ</b><small>Xác nhận để khách yên tâm</small></span>{% icon "chevron-right" %}</a></li>{% endif %}
+          {% if n_out or n_low %}<li><a href="{% url 'inventory' %}?loc=sap_het"><span class="todo__ico todo__ico--warn">{% icon "warehouse" %}</span><span><b>{{ n_out }} hết hàng, {{ n_low }} sắp hết</b><small>Sắp hết là còn {{ low }} sản phẩm trở xuống</small></span>{% icon "chevron-right" %}</a></li>{% endif %}
+          {% if not pending_cancel and not waiting_old and not n_out and not n_low %}<li><div><span class="todo__ico todo__ico--ok">{% icon "circle-check" %}</span><span><b>Không có việc tồn đọng</b><small>Đơn, kho và yêu cầu hủy đều ổn</small></span></div></li>{% endif %}
+        </ul>
+      </section>
+    </div>
+
+    <div class="dash__cols dash__cols--even">
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "truck" %}Đơn hàng theo trạng thái</h2><p>{{ pipeline_total }} đơn</p></div>
+        {% if pipeline_total %}
+        <div class="pipe__bar" aria-hidden="true">
+          {% for label, n, key, pct in pipeline %}{% if n %}<a class="pipe__seg c-{{ key }}" style="flex-grow:{{ n }}" href="{% url 'vendor_orders' %}?trang_thai={{ key }}" tabindex="-1" title="{{ label }}: {{ n }}"></a>{% endif %}{% endfor %}
+        </div>
+        <ul class="pipe__list">
+          {% for label, n, key, pct in pipeline %}<li><a href="{% url 'vendor_orders' %}?trang_thai={{ key }}"><span class="sw c-{{ key }}"></span>{{ label }}<b>{{ n }}</b></a></li>{% endfor %}
+        </ul>
+        {% else %}<div class="empty"><span class="empty__ico">{% icon "receipt" %}</span><p>Chưa có đơn hàng nào.</p></div>{% endif %}
+      </section>
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "star" %}Bán chạy 30 ngày qua</h2></div>
+        {% if top_products %}
+        <ol class="rank">
+          {% for t in top_products %}<li><span class="rank__name">{{ t.product_name }}</span><span class="rank__val">{{ t.qty }} sản phẩm</span><span class="rank__bar"><i style="--w:{{ t.pct|stringformat:".1f" }}%"></i></span></li>{% endfor %}
+        </ol>
+        {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>Chưa có sản phẩm nào bán được trong 30 ngày.</p></div>{% endif %}
+      </section>
+    </div>
+  </div>
+  {% endif %}
+{% else %}
+  <div class="dash">
+    <header class="dash__head">
+      <div><h1>Tổng quan toàn sàn</h1><p>Số liệu 30 ngày gần nhất và các việc đang chờ Quản trị viên.</p></div>
+      <div class="quick">
+        <a class="btn btn--small btn--ghost" href="{% url 'coupons' %}">{% icon "percent" %}Mã toàn sàn</a>
+        <a class="btn btn--small" href="{% url 'stats' %}">{% icon "chart" %}Thống kê chi tiết</a>
+      </div>
+    </header>
+
+    <div class="kpis">
+      <div class="kpi kpi--accent">
+        <p class="kpi__label">{% icon "wallet" %}Doanh thu 30 ngày</p>
+        <p class="kpi__value">{{ month_revenue|vnd }}</p>
+        <p class="kpi__sub">{{ month_done }} đơn hoàn thành</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "store" %}Gian hàng hoạt động</p>
+        <p class="kpi__value">{{ shops_active }}<small>gian hàng</small></p>
+        <p class="kpi__sub">{{ shops_locked }} đang bị khóa</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "package" %}Sản phẩm đang bán</p>
+        <p class="kpi__value">{{ n_products_visible }}<small>sản phẩm</small></p>
+        <p class="kpi__sub">Hiển thị trên sàn</p>
+      </div>
+      <div class="kpi">
+        <p class="kpi__label">{% icon "ban" %}Đơn hủy 30 ngày</p>
+        <p class="kpi__value">{{ month_cancel }}<small>đơn</small></p>
+        <p class="kpi__sub">Gồm hủy thủ công và tự động</p>
+      </div>
+    </div>
+
+    <div class="dash__cols">
+      {% include "shopping/_chart.html" with title="Doanh thu toàn sàn 30 ngày" %}
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "alert" %}Việc cần xử lý</h2></div>
+        <ul class="todo">
+          {% if shops_pending %}<li><a href="{% url 'admin_shops' %}?trang_thai=CHO_DUYET"><span class="todo__ico todo__ico--warn">{% icon "store" %}</span><span><b>{{ shops_pending }} gian hàng chờ duyệt</b><small>Duyệt hoặc từ chối kèm lý do</small></span>{% icon "chevron-right" %}</a></li>{% endif %}
+          {% if refunds_waiting %}<li><a href="{% url 'refunds' %}"><span class="todo__ico todo__ico--danger">{% icon "wallet" %}</span><span><b>{{ refunds_waiting }} khoản chờ hoàn tiền</b><small>Đơn đã hủy và thanh toán đến muộn</small></span>{% icon "chevron-right" %}</a></li>{% endif %}
+          {% if not shops_pending and not refunds_waiting %}<li><div><span class="todo__ico todo__ico--ok">{% icon "circle-check" %}</span><span><b>Không có việc tồn đọng</b><small>Không còn gian hàng chờ duyệt hay khoản chờ hoàn tiền</small></span></div></li>{% endif %}
+        </ul>
+      </section>
+    </div>
+
+    <div class="dash__cols dash__cols--even">
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "trending-up" %}Gian hàng doanh thu cao</h2><p>30 ngày qua</p></div>
+        {% if top_shops %}
+        <ol class="rank">
+          {% for r in top_shops %}<li><span class="rank__name">{{ r.shop.name }}</span><span class="rank__val">{{ r.revenue|vnd }}</span><span class="rank__bar"><i style="--w:{{ r.pct|stringformat:".1f" }}%"></i></span></li>{% endfor %}
+        </ol>
+        {% else %}<div class="empty"><span class="empty__ico">{% icon "store" %}</span><p>Chưa có gian hàng nào phát sinh doanh thu.</p></div>{% endif %}
+      </section>
+      <section class="panel">
+        <div class="panel__head"><h2>{% icon "history" %}Hoạt động quản trị gần đây</h2><a class="textlink" href="{% url 'admin_logs' %}">Xem nhật ký{% icon "chevron-right" %}</a></div>
+        {% if recent_logs %}
+        <ul class="logfeed">
+          {% for l in recent_logs %}<li><span class="todo__ico">{% icon "shield" %}</span><div><p><b>{{ l.action }}</b>: {{ l.target_label|default:l.get_target_type_display }}</p><small>{{ l.actor|default:"Hệ thống" }}, {{ l.at|date:"d/m H:i" }}{% if l.reason %}. {{ l.reason }}{% endif %}</small></div></li>{% endfor %}
+        </ul>
+        {% else %}<div class="empty"><span class="empty__ico">{% icon "history" %}</span><p>Chưa có hoạt động quản trị nào.</p></div>{% endif %}
+      </section>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

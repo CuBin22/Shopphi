@@ -1,0 +1,46 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block bodyclass %}is-manage{% endblock %}
+{% block mainclass %}wrap--wide{% endblock %}
+{% block headerwrap %}wrap--wide{% endblock %}
+{% block msgwrap %}wrap--wide{% endblock %}
+{% block catnav %}{% endblock %}
+{% block content %}
+{% with n=request.resolver_match.url_name b=side_badges %}
+<div class="manage">
+  <nav class="side" aria-label="Menu kênh quản lý">
+    <div class="side__who">
+      <span class="avatar" aria-hidden="true">{% if role == 'NGUOI_BAN' %}{% icon "store" %}{% else %}{% icon "shield" %}{% endif %}</span>
+      <div><strong>{% if role == 'NGUOI_BAN' %}{{ my_shop_name|default:"Kênh người bán" }}{% else %}Quản trị sàn{% endif %}</strong><span>{% if role == 'NGUOI_BAN' %}Người bán{% else %}Quản trị viên{% endif %}</span></div>
+    </div>
+    {% if role == 'NGUOI_BAN' %}
+      <h2>Tổng quan</h2>
+      <a href="{% url 'manage_home' %}" {% if n == 'manage_home' %}aria-current="page"{% endif %}>{% icon "dashboard" %}Bảng điều khiển</a>
+      <a href="{% url 'stats' %}" {% if n == 'stats' %}aria-current="page"{% endif %}>{% icon "chart" %}Thống kê</a>
+      <h2>Bán hàng</h2>
+      <a href="{% url 'vendor_orders' %}" {% if n == 'vendor_orders' or n == 'vendor_order_detail' %}aria-current="page"{% endif %}>{% icon "receipt" %}Đơn hàng{% if b.vendor_orders %}<span class="badge">{{ b.vendor_orders }}</span>{% endif %}</a>
+      <a href="{% url 'product_list' %}" {% if n == 'product_list' or n == 'product_add' or n == 'product_edit' %}aria-current="page"{% endif %}>{% icon "package" %}Sản phẩm</a>
+      <a href="{% url 'inventory' %}" {% if n == 'inventory' %}aria-current="page"{% endif %}>{% icon "warehouse" %}Kho nhanh</a>
+      <a href="{% url 'coupons' %}" {% if n == 'coupons' or n == 'coupon_detail' or n == 'coupon_edit' %}aria-current="page"{% endif %}>{% icon "percent" %}Mã giảm giá</a>
+      <a href="{% url 'vendor_reviews' %}" {% if n == 'vendor_reviews' %}aria-current="page"{% endif %}>{% icon "star" %}Đánh giá</a>
+      <h2>Gian hàng</h2>
+      <a href="{% url 'shop_info' %}" {% if n == 'shop_info' or n == 'shop_edit' or n == 'shop_register' %}aria-current="page"{% endif %}>{% icon "store" %}Thông tin gian hàng</a>
+    {% else %}
+      <h2>Tổng quan</h2>
+      <a href="{% url 'manage_home' %}" {% if n == 'manage_home' %}aria-current="page"{% endif %}>{% icon "dashboard" %}Bảng điều khiển</a>
+      <a href="{% url 'stats' %}" {% if n == 'stats' %}aria-current="page"{% endif %}>{% icon "chart" %}Thống kê toàn sàn</a>
+      <h2>Kiểm duyệt</h2>
+      <a href="{% url 'admin_shops' %}" {% if n == 'admin_shops' %}aria-current="page"{% endif %}>{% icon "store" %}Gian hàng{% if b.admin_shops %}<span class="badge">{{ b.admin_shops }}</span>{% endif %}</a>
+      <a href="{% url 'admin_products' %}" {% if n == 'admin_products' %}aria-current="page"{% endif %}>{% icon "ban" %}Sản phẩm vi phạm</a>
+      <a href="{% url 'admin_keywords' %}" {% if n == 'admin_keywords' %}aria-current="page"{% endif %}>{% icon "hash" %}Từ khóa gợi ý</a>
+      <h2>Tài chính</h2>
+      <a href="{% url 'refunds' %}" {% if n == 'refunds' %}aria-current="page"{% endif %}>{% icon "wallet" %}Hoàn tiền{% if b.refunds %}<span class="badge">{{ b.refunds }}</span>{% endif %}</a>
+      <a href="{% url 'coupons' %}" {% if n == 'coupons' or n == 'coupon_detail' or n == 'coupon_edit' %}aria-current="page"{% endif %}>{% icon "percent" %}Mã giảm giá toàn sàn</a>
+      <h2>Hệ thống</h2>
+      <a href="{% url 'admin_logs' %}" {% if n == 'admin_logs' %}aria-current="page"{% endif %}>{% icon "history" %}Nhật ký quản trị</a>
+    {% endif %}
+  </nav>
+  <div class="manage__main">{% block manage %}{% endblock %}</div>
+</div>
+{% endwith %}
+{% endblock %}

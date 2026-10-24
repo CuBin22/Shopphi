@@ -1,0 +1,50 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đánh giá của tôi - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>{% icon "star" %}Đánh giá của tôi</h1><p>Chỉ đánh giá được sản phẩm của đơn đã Hoàn thành, một lần cho mỗi sản phẩm.</p></div>
+<nav class="ordertabs" aria-label="Đánh giá">
+  <a href="?tab=cho" {% if tab == 'cho' %}aria-current="page"{% endif %}>Chờ đánh giá {% if pending %}<span class="ordertabs__n">{{ pending|length }}</span>{% endif %}</a>
+  <a href="?tab=da" {% if tab == 'da' %}aria-current="page"{% endif %}>Đã đánh giá {% if n_reviewed %}<span class="ordertabs__n">{{ n_reviewed }}</span>{% endif %}</a>
+</nav>
+
+{% if tab == 'cho' %}
+  {% for it in pending %}
+  <section class="cartshop">
+    <div class="orderrow">
+      {% include "shopping/_thumb.html" with product=it.product %}
+      <div class="orderrow__main">
+        <a class="textlink" href="{{ it.product.get_absolute_url }}">{{ it.product_name }}</a>
+        <p class="shop">{{ it.variant_name }} &middot; <a class="textlink" href="{% url 'order_detail' it.order_id %}">Đơn #{{ it.order_id }}</a> &middot; {{ it.order.shop.name }}</p>
+      </div>
+    </div>
+    <form method="post" action="{% url 'review_create' it.order_id it.product.pk %}" class="reviewform">{% csrf_token %}
+      <input type="hidden" name="from" value="reviews">
+      <label>Số sao <select name="rating">{% for n in "54321" %}<option value="{{ n }}">{{ n }} sao</option>{% endfor %}</select></label>
+      <input name="comment" placeholder="Bình luận (không bắt buộc)" maxlength="1000">
+      <button class="btn btn--small" type="submit">{% icon "star" %}Gửi đánh giá</button>
+    </form>
+  </section>
+  {% empty %}
+  <div class="empty"><span class="empty__ico">{% icon "circle-check" %}</span><strong>Không có sản phẩm nào chờ đánh giá.</strong>
+    <p>Sản phẩm của đơn đã Hoàn thành (bạn xác nhận đã nhận hàng hoặc tự hoàn thành sau 7 ngày) sẽ hiện ở đây.</p>
+    <p><a class="btn btn--ghost" href="{% url 'my_orders' %}">Xem đơn hàng của tôi</a></p></div>
+  {% endfor %}
+{% else %}
+  {% for r in reviews %}
+  <section class="cartshop">
+    <div class="orderrow">
+      {% include "shopping/_thumb.html" with product=r.product %}
+      <div class="orderrow__main">
+        <a class="textlink" href="{{ r.product.get_absolute_url }}">{{ r.product.name }}</a>
+        <p class="review__head">{% rating_icons r.rating %}<span class="shop">{{ r.created|date:"d/m/Y" }}{% if r.order_id %} &middot; <a class="textlink" href="{% url 'order_detail' r.order_id %}">Đơn #{{ r.order_id }}</a>{% endif %}</span></p>
+        {% if r.comment %}<p>{{ r.comment }}</p>{% endif %}
+      </div>
+    </div>
+  </section>
+  {% empty %}
+  <div class="empty"><span class="empty__ico">{% icon "star" %}</span><strong>Bạn chưa đánh giá sản phẩm nào.</strong></div>
+  {% endfor %}
+  {% include "shopping/_pager.html" %}
+{% endif %}
+{% endblock %}

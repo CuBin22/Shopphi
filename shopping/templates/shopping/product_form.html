@@ -1,0 +1,76 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>{% if product %}Sửa sản phẩm{% else %}Thêm sản phẩm{% endif %} - {{ shop.name }}</h1>
+<p>Giá bán nhập là giá <strong>đã gồm VAT</strong>, lớn hơn 0; số lượng tồn không âm. Danh mục, thẻ phân loại và thông số là dữ liệu cho tìm kiếm, gợi ý và chatbot.</p></div>
+{% if product and product.status == 'BI_GO' %}<p class="msg msg--error">Sản phẩm đang bị Quản trị viên gỡ. Lý do: {{ product.removal_reason }}</p>{% endif %}
+<form method="post" enctype="multipart/form-data" class="formcard">{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}{% if f.name != 'image' %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endif %}{% endfor %}
+
+  <h2>Hình ảnh sản phẩm</h2>
+  <p class="shop">Tối đa {{ max_images }} ảnh (gồm ảnh bìa), mỗi ảnh không quá {{ max_mb }} MB, định dạng JPEG, PNG hoặc WEBP. Hệ thống tự thu nhỏ và chuẩn hóa ảnh.</p>
+  {% if gallery_errors %}<ul class="msg msg--error">{% for e in gallery_errors %}<li>{{ e }}</li>{% endfor %}</ul><p class="shop">Hãy chọn lại ảnh phụ (trình duyệt không giữ file đã chọn).</p>{% endif %}
+  <label>Ảnh bìa (hiển thị ở danh sách và đầu trang sản phẩm){{ form.image }}</label>{{ form.image.errors }}
+  {% if extras %}
+  <p class="shop">Ảnh phụ hiện có:</p>
+  <div class="imggrid">
+    {% for e in extras %}
+    <div class="imgcard"><img src="{{ e.image.url }}" alt="Ảnh phụ {{ forloop.counter }}" loading="lazy">
+      <label class="check"><input type="checkbox" name="del_img" value="{{ e.pk }}"> Xóa ảnh này</label>
+      <label class="check"><input type="radio" name="cover_from" value="{{ e.pk }}"> Đặt làm ảnh bìa</label></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <label>Thêm ảnh phụ (chọn được nhiều ảnh)<input type="file" name="gallery" id="gallery" accept="image/jpeg,image/png,image/webp" multiple></label>
+  <div class="imggrid" id="gallery-preview" aria-live="polite"></div>
+
+  <h2>Biến thể, giá bán và tồn kho</h2>
+  {{ fs.management_form }}
+  {{ fs.non_form_errors }}
+  <div id="variant-rows">
+  {% for f in fs %}
+  <fieldset class="cartshop">
+    {{ f.id }}{{ f.non_field_errors }}
+    <label>Tên biến thể (màu, dung lượng...){{ f.name }}</label>{{ f.name.errors }}
+    <label>Giá bán (đ, đã gồm VAT){{ f.price }}</label>{{ f.price.errors }}
+    <label>Số lượng tồn{{ f.stock }}</label>{{ f.stock.errors }}
+    {% if f.instance.pk %}<label class="check">{{ f.DELETE }} Xóa biến thể này</label>{% endif %}
+  </fieldset>
+  {% endfor %}
+  </div>
+  <template id="variant-empty">
+  {% with f=fs.empty_form %}<fieldset class="cartshop">
+    {{ f.id }}
+    <label>Tên biến thể (màu, dung lượng...){{ f.name }}</label>
+    <label>Giá bán (đ, đã gồm VAT){{ f.price }}</label>
+    <label>Số lượng tồn{{ f.stock }}</label>
+  </fieldset>{% endwith %}
+  </template>
+  <p><button type="button" class="btn btn--small btn--ghost" id="add-variant">+ Thêm biến thể</button></p>
+  <div class="actions"><button class="btn" type="submit">Lưu sản phẩm</button> <a class="btn btn--ghost" href="{% url 'product_list' %}">Quay lại</a></div>
+</form>
+<script>
+(function () {
+  var total = document.getElementById("id_{{ fs.prefix }}-TOTAL_FORMS"), rows = document.getElementById("variant-rows"),
+      tpl = document.getElementById("variant-empty");
+  document.getElementById("add-variant").addEventListener("click", function () {
+    var n = parseInt(total.value, 10), wrap = document.createElement("div");
+    wrap.innerHTML = tpl.innerHTML.replace(/__prefix__/g, n);
+    while (wrap.firstChild) rows.appendChild(wrap.firstChild);
+    total.value = n + 1;
+    var first = rows.querySelector("fieldset:last-of-type input[type=text]"); if (first) first.focus();
+  });
+  var input = document.getElementById("gallery"), box = document.getElementById("gallery-preview");
+  input.addEventListener("change", function () {
+    box.innerHTML = "";
+    Array.prototype.forEach.call(input.files, function (f) {
+      var d = document.createElement("div"); d.className = "imgcard";
+      var img = document.createElement("img"); img.alt = f.name; img.src = URL.createObjectURL(f);
+      var c = document.createElement("span"); c.className = "shop"; c.textContent = f.name + (f.size > {{ max_mb }} * 1048576 ? " - quá dung lượng" : "");
+      d.appendChild(img); d.appendChild(c); box.appendChild(d);
+    });
+  });
+})();
+</script>
+{% endblock %}

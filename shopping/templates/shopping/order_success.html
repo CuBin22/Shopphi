@@ -1,0 +1,12 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="empty" style="margin-top:36px"><span class="empty__ico">{% icon "circle-check" %}</span><strong>Đặt hàng thành công. Mã nhóm đơn #{{ group.pk }}</strong>
+<p>Tổng thanh toán {{ group.total|vnd }} ({{ group.get_payment_method_display }}). Đã tách thành {{ orders|length }} đơn:</p>
+<ul style="list-style:none;padding:0;display:grid;gap:8px">{% for o in orders %}<li><a class="textlink" href="{% url 'order_detail' o.pk %}">Đơn #{{ o.pk }}</a> {{ o.shop.name }}, {{ o.total|vnd }} {% include "shopping/_status.html" %}</li>{% endfor %}</ul>
+{% if can_pay %}
+<p class="msg msg--warning">Đơn đang giữ kho{% if group.hold_until %} đến <strong>{{ group.hold_until|date:"H:i d/m/Y" }}</strong>{% endif %}. Quá hạn mà chưa thanh toán, đơn sẽ tự hủy và tồn kho được hoàn trả.</p>
+<form method="post" action="{% url 'pay_group' group.pk %}" target="_blank" rel="noopener" data-pay="{{ group.pk }}" data-status-url="{% url 'payment_status' group.pk %}">{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán ngay qua {{ provider_label }}</button></form>
+{% endif %}
+<p><a class="btn btn--ghost" href="{% url 'my_orders' %}">{% icon "package" %}Xem đơn hàng của tôi</a></p></div>
+{% endblock %}

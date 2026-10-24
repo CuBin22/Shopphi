@@ -1,0 +1,23 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Xác nhận Gmail - Shopphi{% endblock %}
+{% block content %}
+<div class="auth">
+<div class="auth__card">
+  <span class="auth__ico">{% icon "lock" %}</span>
+  <h1>Xác nhận Gmail</h1>
+  <p>Nhập mã OTP 6 chữ số đã gửi tới <strong>{{ masked }}</strong> để hoàn tất đăng ký. Tài khoản chỉ được tạo sau khi xác nhận.</p>
+  <form method="post">
+    {% csrf_token %}
+    <label>{{ form.otp.label }}<input type="text" name="otp" value="{{ form.otp.value|default:'' }}" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required autofocus></label>{{ form.otp.errors }}
+    <button class="btn btn--lg btn--block" type="submit">Xác nhận và tạo tài khoản</button>
+  </form>
+  <form method="post" action="{% url 'resend_register_otp' %}" class="auth__foot">
+    {% csrf_token %}
+    <p>Chưa nhận được mã? Kiểm tra thư mục Spam, hoặc chờ {{ resend_seconds }} giây rồi gửi lại. Mã cũ sẽ hết hiệu lực.</p>
+    <button class="btn btn--ghost" type="submit">Gửi lại mã</button>
+    <a class="btn btn--ghost" href="{% url 'register' %}">Đổi Gmail / thông tin</a>
+  </form>
+</div>
+</div>
+{% endblock %}

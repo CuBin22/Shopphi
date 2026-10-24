@@ -1,0 +1,129 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn #{{ o.pk }} - Shopphi{% endblock %}
+{% block content %}
+<p class="crumb"><a class="textlink" href="{% url 'my_orders' %}">{% icon "arrow-left" %}Đơn hàng của tôi</a></p>
+<div class="resulthead">
+  <h1>{% icon "receipt" %}Đơn #{{ o.pk }}</h1>
+  <p>{% include "shopping/_status.html" %}
+    <span class="shop">{% icon "store" %}{{ o.shop.name }}</span>
+    <span class="shop">{% icon "clock" %}Đặt lúc {{ o.created|date:"H:i d/m/Y" }}</span>
+    <span class="shop">{% icon "layers" %}Nhóm đơn #{{ group.pk }}</span></p>
+</div>
+
+<ol class="steps" aria-label="Tiến trình đơn hàng">
+  {% for s in steps %}
+  <li class="steps__i steps__i--{{ s.state }}"{% if s.state == 'current' %} aria-current="step"{% endif %}>
+    <span class="steps__dot">{% if s.state == 'done' %}{% icon "check" %}{% elif s.state == 'cancel' %}{% icon "x" %}{% endif %}</span>
+    <strong>{{ s.label }}</strong>
+    <small>{% if s.at %}{{ s.at|date:"H:i d/m/Y" }}{% else %}&nbsp;{% endif %}</small>
+  </li>
+  {% endfor %}
+</ol>
+
+{% if o.status == 'DA_HUY' %}<p class="msg msg--error">Đơn đã hủy. Lý do: {{ o.cancel_reason|default:"không ghi" }}
+  {% if o.payment_status == 'CHO_HOAN_TIEN' %} Số tiền {{ o.total|vnd }} đang chờ hoàn tiền (mô phỏng Sandbox).{% elif o.payment_status == 'DA_HOAN_TIEN' %} Số tiền {{ o.total|vnd }} đã được hoàn (mô phỏng Sandbox).{% endif %}</p>{% endif %}
+{% if pending %}<p class="msg msg--warning">Yêu cầu hủy của bạn (gửi {{ pending.created|date:"H:i d/m/Y" }}) đang chờ Người bán xử lý, tự được chấp nhận sau 24 giờ.</p>{% endif %}
+
+<div class="dash__cols">
+<div class="dash">
+<section class="cartshop">
+  <h2>{% icon "package" %}Sản phẩm</h2>
+  {% for i in items %}
+  <div class="row">
+    <span>{% include "shopping/_thumb.html" with product=i.product %}
+      {% if i.sellable %}<a class="textlink" href="{{ i.product.get_absolute_url }}">{{ i.product_name }}</a>{% else %}{{ i.product_name }} <span class="shop">(đã ngừng bán)</span>{% endif %},
+      {{ i.variant_name }} &times; {{ i.qty }} <span class="shop">{{ i.unit_price|vnd }} mỗi sản phẩm</span></span>
+    <strong>{{ i.line_total|vnd }}</strong>
+  </div>
+  {% if o.status == 'HOAN_THANH' %}
+    {% if i.review %}<div class="review"><p class="review__head">{% rating_icons i.review.rating %}<span class="shop">Bạn đã đánh giá ngày {{ i.review.created|date:"d/m/Y" }}</span></p>{% if i.review.comment %}<p>{{ i.review.comment }}</p>{% endif %}</div>
+    {% else %}
+    <form method="post" action="{% url 'review_create' o.pk i.product.pk %}" class="reviewform">{% csrf_token %}
+      <label>Số sao <select name="rating">{% for n in "54321" %}<option value="{{ n }}">{{ n }} sao</option>{% endfor %}</select></label>
+      <input name="comment" placeholder="Bình luận (không bắt buộc)" maxlength="1000">
+      <button class="btn btn--small btn--ghost" type="submit">{% icon "star" %}Đánh giá</button>
+    </form>{% endif %}
+  {% endif %}
+  {% endfor %}
+  <hr class="sep">
+  <p class="row"><span>Tạm tính</span><span>{{ o.subtotal|vnd }}</span></p>
+  {% if o.shop_discount %}<p class="row"><span>Giảm giá gian hàng{% if o.shop_coupon %} <span class="pill pill--pay">{{ o.shop_coupon.code }}</span>{% endif %}</span><span>- {{ o.shop_discount|vnd }}</span></p>{% endif %}
+  {% if o.global_discount %}<p class="row"><span>Giảm giá toàn sàn{% if group.global_coupon %} <span class="pill pill--pay">{{ group.global_coupon.code }}</span>{% endif %} <span class="shop">(phần phân bổ cho đơn này)</span></span><span>- {{ o.global_discount|vnd }}</span></p>{% endif %}
+  {% if not o.shop_discount and not o.global_discount %}<p class="row"><span>Giảm giá</span><span>- 0 đ</span></p>{% endif %}
+  <p class="row"><span>Phí vận chuyển</span><span>{{ o.shipping_fee|vnd }}</span></p>
+  <p class="row row--total"><strong>Tổng thanh toán</strong><strong>{{ o.total|vnd }}</strong></p>
+</section>
+
+<section class="cartshop">
+  <h2>{% icon "history" %}Nhật ký trạng thái</h2>
+  <ul class="timeline">{% for l in logs %}<li>{{ l.at|date:"d/m/Y H:i" }}: {% if l.old_status and l.old_status != l.new_status %}{{ l.old_status|order_status }} &rarr; {% endif %}<strong>{{ l.new_status|order_status }}</strong>{% if l.note %} &middot; {{ l.note }}{% endif %} <span class="shop">({{ l.actor|actor_name }})</span></li>{% endfor %}</ul>
+</section>
+</div>
+
+<div class="dash">
+<section class="cartshop">
+  <h2>{% icon "map-pin" %}Giao hàng</h2>
+  <p><strong>{{ group.recipient_name }}</strong> &middot; {{ group.recipient_phone }}</p>
+  <p class="shop">{{ group.address }}</p>
+  {% if o.tracking_code %}<p>{% icon "truck" %}{{ o.carrier }}, mã vận đơn <strong>{{ o.tracking_code }}</strong>{% if o.shipped_at %} <span class="shop">(giao từ {{ o.shipped_at|date:"H:i d/m/Y" }})</span>{% endif %}</p>
+  {% elif o.status == 'CHO_XAC_NHAN' or o.status == 'DA_XAC_NHAN' %}<p class="shop">Chưa có thông tin vận chuyển. Người bán sẽ nhập đơn vị vận chuyển và mã vận đơn khi giao hàng.</p>{% endif %}
+</section>
+
+<section class="cartshop">
+  <h2>{% icon "wallet" %}Thanh toán</h2>
+  <p class="row"><span>Phương thức</span><span>{{ group.get_payment_method_display }}</span></p>
+  <p class="row"><span>Trạng thái</span><span class="pill pill--pay">{{ o.get_payment_status_display }}</span></p>
+  {% if online %}
+    {% if o.payment_txn %}<p class="shop">Đã thanh toán qua giao dịch <strong>{{ o.payment_txn.ref }}</strong>{% if o.payment_txn.processed_at %} lúc {{ o.payment_txn.processed_at|date:"H:i d/m/Y" }}{% endif %}.</p>{% endif %}
+    {% if txns %}<details class="txns"><summary>Lịch sử giao dịch của nhóm đơn ({{ txns|length }})</summary>
+      <ul>{% for t in txns %}<li><code>{{ t.ref }}</code> &middot; {{ t.amount|vnd }} &middot; {{ t.status|txn_status }}{% if t.refund_status %} &middot; <em>{{ t.refund_status|pay_status }}</em>{% endif %} <span class="shop">{{ t.created|date:"H:i d/m" }}</span></li>{% endfor %}</ul></details>{% endif %}
+    {% if can_pay %}
+      <p class="msg msg--warning">Cần thanh toán {{ pay_amount|vnd }}{% if pay_orders > 1 %} cho {{ pay_orders }} đơn của nhóm #{{ group.pk }}{% endif %}.{% if group.hold_until %} Kho được giữ đến <strong>{{ group.hold_until|date:"H:i d/m/Y" }}</strong>, quá hạn đơn sẽ tự hủy.{% endif %}</p>
+      <form method="post" action="{% url 'pay_group' group.pk %}" target="_blank" rel="noopener" data-pay="{{ group.pk }}" data-status-url="{% url 'payment_status' group.pk %}">{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán trực tuyến ({{ provider_label }})</button></form>
+    {% endif %}
+  {% else %}
+    <p class="shop">Thanh toán khi nhận hàng. Trạng thái chuyển sang Đã thanh toán khi đơn Hoàn thành.</p>
+  {% endif %}
+</section>
+
+<section class="cartshop">
+  <h2>{% icon "store" %}Gian hàng</h2>
+  <p><strong>{{ o.shop.name }}</strong></p>
+  {% if o.shop.contact %}<p class="shop">{% icon "phone" %}Liên hệ: {{ o.shop.contact }}</p>{% endif %}
+  <p class="shop">Cần hỗ trợ về đơn này, hãy liên hệ gian hàng hoặc hỏi chatbot ở góc phải màn hình.</p>
+</section>
+
+{% if siblings %}
+<section class="cartshop">
+  <h2>{% icon "layers" %}Đơn khác cùng lần đặt</h2>
+  {% for s in siblings %}<p class="row"><span><a class="textlink" href="{% url 'order_detail' s.pk %}">Đơn #{{ s.pk }}</a> <span class="shop">{{ s.shop.name }}</span></span><span>{% include "shopping/_status.html" with o=s %} {{ s.total|vnd }}</span></p>{% endfor %}
+</section>
+{% endif %}
+
+<div class="actions actions--col">
+  {% if o.status == 'DANG_GIAO' %}
+  <form method="post" action="{% url 'order_received' o.pk %}">{% csrf_token %}<button class="btn btn--block" type="submit">{% icon "circle-check" %}Đã nhận hàng</button>
+    <p class="shop">Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.</p></form>
+  {% endif %}
+  {% if can_reorder %}<form method="post" action="{% url 'order_reorder' o.pk %}">{% csrf_token %}<button class="btn btn--ghost btn--block" type="submit">{% icon "cart" %}Mua lại</button></form>{% endif %}
+</div>
+
+{% if can_cancel %}
+<form method="post" action="{% url 'order_cancel' o.pk %}" class="formcard formcard--full">{% csrf_token %}
+  <h2>{% icon "undo" %} Hủy đơn</h2>
+  <p class="shop">{% if o.status == 'CHO_XAC_NHAN' %}Đơn đang Chờ xác nhận: hủy ngay, tồn kho được hoàn trả.{% else %}Đơn đã xác nhận: gửi yêu cầu để Người bán chấp nhận hoặc từ chối.{% endif %}</p>
+  <label>Lý do hủy<input name="reason" required maxlength="255"></label>
+  <button class="btn btn--danger" type="submit">{% if o.status == 'CHO_XAC_NHAN' %}Hủy đơn{% else %}Gửi yêu cầu hủy{% endif %}</button>
+</form>
+{% endif %}
+
+{% if requests %}
+<section class="cartshop">
+  <h2>{% icon "undo" %}Yêu cầu hủy đơn</h2>
+  {% for r in requests %}<p class="row"><span>{{ r.created|date:"H:i d/m/Y" }}: {{ r.reason }}{% if r.result == 'TU_CHOI' %} <span class="warn">Lý do từ chối: {{ r.reject_reason }}</span>{% endif %}{% if r.auto_accepted %} <span class="shop">(tự chấp nhận sau 24 giờ)</span>{% endif %}</span><span class="pill pill--pay">{{ r.result|cancel_result }}</span></p>{% endfor %}
+</section>
+{% endif %}
+</div>
+</div>
+{% endblock %}

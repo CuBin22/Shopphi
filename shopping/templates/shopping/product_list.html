@@ -1,0 +1,40 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Sản phẩm - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "package" %}Sản phẩm</h1><p>{{ shop.name }}: {{ page.paginator.count }} sản phẩm</p></div>
+{% if shop.status != 'HOAT_DONG' %}<p class="msg msg--warning">Gian hàng chưa ở trạng thái Hoạt động nên chưa đăng bán được sản phẩm.</p>
+{% else %}<p class="actions" style="margin:0 0 18px"><a class="btn" href="{% url 'product_add' %}">{% icon "plus" %}Thêm sản phẩm</a> <a class="btn btn--ghost" href="{% url 'inventory' %}">{% icon "warehouse" %}Kho nhanh (giá và tồn)</a></p>{% endif %}
+<form method="get" class="filters">
+  <label>Tìm sản phẩm<input name="q" value="{{ q }}" placeholder="Tên, thương hiệu, thẻ" style="min-width:240px"></label>
+  <label>Danh mục<select name="danh_muc"><option value="">Mọi danh mục</option>{% for c in categories %}<option value="{{ c.pk }}" {% if cat == c.pk|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>
+  <label>Tồn kho<select name="ton_kho"><option value="">Mọi mức tồn</option>{% for k, l in stock_filters %}<option value="{{ k }}" {% if stock == k %}selected{% endif %}>{{ l }}{% if k == 'sap_het' %} (&le; {{ low }}){% endif %}</option>{% endfor %}</select></label>
+  <input type="hidden" name="trang_thai" value="{{ status }}">
+  <button class="btn" type="submit">{% icon "filter" %}Lọc</button>
+</form>
+<nav class="cats" aria-label="Lọc theo trạng thái"><a href="?q={{ q }}&amp;danh_muc={{ cat }}&amp;ton_kho={{ stock }}" {% if not status %}aria-current="page"{% endif %}>Tất cả</a>
+{% for k, l in statuses %}<a href="?trang_thai={{ k }}&amp;q={{ q }}&amp;danh_muc={{ cat }}&amp;ton_kho={{ stock }}" {% if status == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+{% if products %}
+<div class="tablewrap"><table class="tbl">
+  <thead><tr><th>Sản phẩm</th><th>Danh mục</th><th class="num">Giá từ</th><th class="num">Tồn kho</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>
+  {% for p in products %}
+  <tr>
+    <td><span class="prodcell"><a href="{% url 'product_edit' p.pk %}" class="tile tone-{{ p.pk|tone }} tile--mini" aria-label="Sửa {{ p.name }}">{% if p.image %}<img class="tile__image" src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=p.category.slug %}{% endif %}</a>
+      <span><a class="textlink" href="{% url 'product_edit' p.pk %}">{{ p.name }}</a>{% if p.status == 'BI_GO' %}<br><span class="warn">Bị gỡ: {{ p.removal_reason }}</span>{% endif %}</span></span></td>
+    <td>{{ p.category.name }}</td>
+    <td class="num">{{ p.min_price|vnd }}</td>
+    <td class="num">{{ p.total_stock|default:0 }}{% if not p.total_stock %} <span class="pill pill--warn">Hết hàng</span>{% elif p.total_stock <= low %} <span class="pill pill--warn">Sắp hết</span>{% endif %}</td>
+    <td><span class="pill pill--{% if p.status == 'HIEN_THI' %}HOAN_THANH{% elif p.status == 'BI_GO' %}DA_HUY{% else %}pay{% endif %}">{{ p.get_status_display }}</span></td>
+    <td class="num"><span class="rowactions">
+      <a class="btn btn--small btn--ghost" href="{% url 'product_edit' p.pk %}">{% icon "pencil" %}Sửa</a>
+      {% if p.status != 'BI_GO' %}<form method="post" action="{% url 'product_toggle' p.pk %}" class="inline">{% csrf_token %}<button class="btn btn--small btn--ghost" type="submit">{% if p.status == 'HIEN_THI' %}{% icon "eye-off" %}Ẩn{% else %}{% icon "eye" %}Hiển thị{% endif %}</button></form>{% endif %}
+      <form method="post" action="{% url 'product_delete' p.pk %}" class="inline" onsubmit="return confirm('Xóa sản phẩm này? Nếu đã có đơn hàng thì sản phẩm chỉ bị ẩn.')">{% csrf_token %}<button class="btn btn--small btn--danger" type="submit">{% icon "trash" %}Xóa</button></form>
+    </span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>Không có sản phẩm nào khớp.</p></div>{% endif %}
+{% include "shopping/_pager.html" %}
+{% endblock %}

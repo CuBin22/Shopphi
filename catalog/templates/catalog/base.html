@@ -1,0 +1,105 @@
+{% load static shop_extras %}<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf" content="{{ csrf_token }}">
+  <meta name="theme-color" content="#ee4d2d">
+  <title>{% block title %}Shopphi - Sàn đa gian hàng{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'catalog/css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'catalog/css/storefront.css' %}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+{% include "catalog/_icons.html" %}
+<a class="skip" href="#noidung">Bỏ qua phần đầu trang</a>
+
+<header class="top">
+  <div class="wrap top__utility">
+    <div><a href="{% url 'manage_home' %}">Kênh người bán</a><span class="top__divider">|</span><a href="{% url 'shop_register' %}">Mở gian hàng</a></div>
+    <div><button type="button" data-chat-open>{% icon "message" %} Hỗ trợ</button><span class="top__divider">|</span><span>Tiếng Việt</span></div>
+  </div>
+  <div class="wrap {% block headerwrap %}{% endblock %} top__row">
+    <a class="brand" href="{% url 'home' %}" aria-label="Shopphi, về trang chủ">
+      <span class="brand__mark" aria-hidden="true">{% icon "store" %}</span>Shopphi
+    </a>
+    {% block headersearch %}{% include "catalog/_search_form.html" with variant="compact" %}{% endblock %}
+    <nav class="top__links" aria-label="Tài khoản">
+      <a href="{% url 'cart' %}" class="iconlink" aria-label="Giỏ hàng, {{ cart_count }} sản phẩm">
+        {% icon "cart" %}<span class="count{% if not cart_count %} count--zero{% endif %}" id="cart-count">{{ cart_count }}</span>
+      </a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'notifications' %}" class="iconlink" aria-label="Thông báo{% if unread_count %}, {{ unread_count }} chưa đọc{% endif %}">
+          {% icon "bell" %}{% if unread_count %}<span class="count count--alert">{{ unread_count }}</span>{% endif %}
+        </a>
+        <details class="usermenu">
+          <summary aria-label="Menu tài khoản">
+            <span class="avatar" aria-hidden="true">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+            <span class="usermenu__name">{{ user.first_name|default:user.username }}</span>
+            {% icon "chevron-down" %}
+          </summary>
+          <div class="usermenu__panel">
+            <div class="usermenu__head">
+              <strong>{{ user.first_name|default:user.username }}</strong>
+              <span>{% if role == 'KHACH_HANG' %}Khách hàng{% elif role == 'NGUOI_BAN' %}Người bán{% else %}Quản trị viên{% endif %}</span>
+            </div>
+            <a href="{% url 'profile' %}">{% icon "user" %}Tài khoản của tôi</a>
+            {% if role == 'KHACH_HANG' %}<a href="{% url 'my_orders' %}">{% icon "package" %}Đơn hàng của tôi</a>
+            <a href="{% url 'my_reviews' %}">{% icon "star" %}Đánh giá của tôi</a>
+            {% else %}<a href="{% url 'manage_home' %}">{% icon "dashboard" %}Kênh quản lý</a>{% endif %}
+            <a href="{% url 'notifications' %}">{% icon "bell" %}Thông báo</a>
+            {% if user.is_staff %}<a href="{% url 'admin:index' %}">{% icon "shield" %}Trang quản trị Django</a>{% endif %}
+            <form method="post" action="{% url 'logout' %}" class="inline">{% csrf_token %}<button type="submit">{% icon "log-out" %}Đăng xuất</button></form>
+          </div>
+        </details>
+      {% else %}
+        <a class="headlink" href="{% url 'login' %}">{% icon "log-in" %}<span>Đăng nhập</span></a>
+        <a class="btn btn--small" href="{% url 'register' %}">Đăng ký</a>
+      {% endif %}
+    </nav>
+  </div>
+  {% block catnav %}
+  <nav class="cats wrap" aria-label="Danh mục">
+    <a href="{% url 'search' %}" {% if not category and request.resolver_match.url_name == 'search' %}aria-current="page"{% endif %}>{% icon "grid" %}Tất cả</a>
+    {% for c in nav_categories %}
+      <a href="{% url 'search' %}?danh_muc={{ c.slug }}" {% if category == c.slug %}aria-current="page"{% endif %}>{% include "catalog/_glyph.html" with slug=c.slug %}{{ c.name }}</a>
+    {% endfor %}
+  </nav>
+  {% endblock %}
+</header>
+
+{% block hero %}{% endblock %}
+
+{% if messages %}
+<div class="wrap msgs {% block msgwrap %}{% endblock %}" role="status">
+  {% for m in messages %}<p class="msg msg--{{ m.level_tag }}">{{ m }}</p>{% endfor %}
+</div>
+{% endif %}
+
+<main id="noidung" class="wrap {% block mainclass %}{% endblock %}">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="foot">
+  <div class="wrap">{% icon "store" %}<span>Shopphi - sàn thương mại điện tử đa gian hàng: đồ công nghệ, đồ gia dụng, đồ chơi.</span></div>
+</footer>
+
+<div id="chat" class="chat" hidden data-url="{% url 'chatbot' %}" data-history="{% url 'chatbot_history' %}" role="dialog" aria-label="Trợ lý Shopphi">
+  <div class="chat__head">
+    <span class="chat__ico" aria-hidden="true">{% icon "bot" %}</span>
+    <strong>Trợ lý Shopphi<small>Hỏi giá, tồn kho, thông số</small></strong>
+    <button type="button" id="chat-close" aria-label="Đóng khung chat">{% icon "x" %}</button>
+  </div>
+  <p class="chat__ctx" id="chat-ctx" hidden></p>
+  <div class="chat__log" id="chat-log" aria-live="polite"></div>
+  <form class="chat__form" id="chat-form">
+    <input id="chat-input" maxlength="300" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" aria-label="Câu hỏi cho trợ lý">
+    <button type="submit" aria-label="Gửi">{% icon "send" %}</button>
+  </form>
+</div>
+<button type="button" class="chatfab" id="chat-open" data-chat-open>{% icon "message" %}<span>Hỏi chatbot</span></button>
+<script src="{% static 'catalog/js/app.js' %}" defer></script>
+<script src="{% static 'catalog/js/chat.js' %}" defer></script>
+<script src="{% static 'catalog/js/pay.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

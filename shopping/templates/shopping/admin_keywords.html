@@ -1,0 +1,17 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Từ khóa gợi ý - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "hash" %}Từ điển từ khóa gợi ý</h1><p>Từ khóa bị ẩn không xuất hiện trong gợi ý nhưng người dùng vẫn tìm kiếm bình thường.</p></div>
+<form method="get" class="filters"><label>Tìm cụm từ<input name="q" value="{{ q }}" placeholder="Tìm cụm từ khóa"></label><button class="btn" type="submit">{% icon "search" %}Tìm</button></form>
+{% for k in keywords %}
+<div class="cartshop">
+  <p class="row"><strong style="font-size:19px">{{ k.phrase }}</strong><span><span class="shop">{% icon "search" %}{{ k.frequency }} lượt tìm</span><span class="shop">{% icon "package" %}{{ k.match_count }} sản phẩm khớp</span><span class="pill pill--{% if k.visible %}HOAN_THANH{% else %}pay{% endif %}">{% if k.visible %}Hiện{% else %}Ẩn{% endif %}</span></span></p>
+  {% if not k.visible %}<p class="warn">Lý do ẩn: {{ k.hidden_reason }}</p>{% endif %}
+  <form method="post" class="inline" style="margin-top:8px">{% csrf_token %}<input type="hidden" name="keyword" value="{{ k.pk }}">
+    {% if k.visible %}<input name="reason" placeholder="Lý do ẩn (bắt buộc)" style="min-width:280px"> <button class="btn btn--small btn--ghost" name="action" value="hide">{% icon "eye-off" %}Ẩn</button>
+    {% else %}<button class="btn btn--small" name="action" value="show">{% icon "eye" %}Hiện lại</button>{% endif %}
+  </form>
+</div>
+{% empty %}<div class="empty"><span class="empty__ico">{% icon "hash" %}</span><p>Chưa có từ khóa.</p></div>{% endfor %}
+{% endblock %}

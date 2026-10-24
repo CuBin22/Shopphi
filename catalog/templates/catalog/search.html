@@ -1,0 +1,53 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}{% if q %}{{ q }} - {% endif %}Tìm kiếm - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead">
+  <h1>
+    {% if q %}Kết quả cho "{{ q }}"{% elif current_category %}{{ current_category.name }}{% else %}Tất cả sản phẩm{% endif %}
+  </h1>
+  <p>{{ total }} sản phẩm{% if page.paginator.num_pages > 1 %}, trang {{ page.number }}/{{ page.paginator.num_pages }}{% endif %}</p>
+</div>
+
+<form class="filters" method="get" action="{% url 'search' %}">
+  <input type="hidden" name="q" value="{{ q }}">
+  <input type="hidden" name="loc" value="1">
+  <label>Danh mục
+    <select name="danh_muc">
+      <option value="">Tất cả</option>
+      {% for c in nav_categories %}<option value="{{ c.slug }}" {% if category == c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Giá từ (đ)<input type="text" inputmode="numeric" name="gia_tu" value="{{ price_from }}" placeholder="0"></label>
+  <label>đến (đ)<input type="text" inputmode="numeric" name="gia_den" value="{{ price_to }}" placeholder="Không giới hạn"></label>
+  <label>Sắp xếp
+    <select name="sap_xep">
+      {% for key, label in sorts %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="btn">{% icon "filter" %}Lọc</button>
+</form>
+
+{% if results %}
+<div class="grid">
+  {% for p in results %}{% include "catalog/_card.html" with nguon=nguon %}{% endfor %}
+</div>
+{% if page.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="Phân trang">
+  {% if page.has_previous %}<a href="?{{ page_query }}&amp;trang=1" aria-label="Trang đầu">&laquo;</a><a href="?{{ page_query }}&amp;trang={{ page.previous_page_number }}">&lsaquo; Trước</a>{% endif %}
+  {% for n in page.paginator.page_range %}
+    {% if n == page.number %}<span class="pager__cur" aria-current="page">{{ n }}</span>
+    {% elif n >= page.number|add:"-2" and n <= page.number|add:"2" %}<a href="?{{ page_query }}&amp;trang={{ n }}">{{ n }}</a>{% endif %}
+  {% endfor %}
+  {% if page.has_next %}<a href="?{{ page_query }}&amp;trang={{ page.next_page_number }}">Sau &rsaquo;</a><a href="?{{ page_query }}&amp;trang={{ page.paginator.num_pages }}" aria-label="Trang cuối">&raquo;</a>{% endif %}
+</nav>
+{% endif %}
+{% else %}
+<div class="empty">
+  <span class="empty__ico">{% icon "search" %}</span>
+  <strong>Không tìm thấy sản phẩm phù hợp.</strong>
+  <p>Thử bớt từ khóa, bỏ bộ lọc giá hoặc chọn một danh mục.</p>
+  <p><a class="btn btn--ghost" href="{% url 'home' %}">Về trang chủ</a></p>
+</div>
+{% endif %}
+{% endblock %}

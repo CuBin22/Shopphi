@@ -1,0 +1,12 @@
+{% load shop_extras %}
+<a class="card" href="{{ p.get_absolute_url }}{% if nguon %}?nguon={{ nguon }}{% endif %}">
+  <div class="tile tone-{{ p.pk|tone }}">
+    {% if p.image %}<img class="tile__image" src="{{ p.image.url }}" alt="{{ p.name }}" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=p.category.slug %}{% endif %}
+    {% if p.stock == 0 %}<span class="tag tag--out">Hết hàng</span>{% endif %}
+  </div>
+  <div class="card__body">
+    <h3>{{ p.name }}</h3>
+    <p class="shop">{% icon "store" %}{{ p.shop.name }}</p>
+    <p class="price">{{ p.price|vnd }}</p>
+  </div>
+</a>

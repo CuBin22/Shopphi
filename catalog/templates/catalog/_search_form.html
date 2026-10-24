@@ -1,0 +1,11 @@
+{% load shop_extras %}
+<form class="search search--{{ variant }}" role="search" action="{% url 'search' %}" method="get"
+      data-search data-url="{% url 'suggest' %}" autocomplete="off">
+  <label class="sr" for="q-{{ variant }}">Tìm sản phẩm</label>
+  <span class="search__ico" aria-hidden="true">{% icon "search" %}</span>
+  <input id="q-{{ variant }}" type="search" name="q" value="{{ q|default:'' }}" placeholder="Tìm tai nghe, nồi chiên, đồ chơi..."
+         maxlength="100" role="combobox" aria-expanded="false" aria-controls="sg-{{ variant }}" aria-autocomplete="list">
+  <input type="hidden" name="goi_y" value="0">
+  <button type="submit" aria-label="Tìm sản phẩm">{% icon "search" %}<span class="sr">Tìm</span></button>
+  <ul class="suggest" id="sg-{{ variant }}" role="listbox" hidden></ul>
+</form>

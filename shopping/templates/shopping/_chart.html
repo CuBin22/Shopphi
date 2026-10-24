@@ -1,0 +1,22 @@
+{% load shop_extras %}
+<section class="panel" data-chart>
+  <div class="panel__head">
+    <h2>{% icon "trending-up" %}{{ title }}</h2>
+    <p class="chart__read" data-read aria-live="polite">Tổng {{ chart.total|vnd }}, {{ chart.done }} đơn hoàn thành</p>
+  </div>
+  {% if chart.total %}
+  <div class="chart__plot">
+    <div class="chart__grid" aria-hidden="true">
+      <span style="top:0"><i>{{ chart.top|vnd_short }}</i></span>
+      <span style="top:50%"><i>{{ chart.mid|vnd_short }}</i></span>
+      <span style="top:100%"><i>0</i></span>
+    </div>
+    <div class="chart__bars">
+      {% for p in chart.points %}<button type="button" class="bar{% if p.revenue %} bar--has{% endif %}" style="--h:{{ p.h|stringformat:".1f" }}%;--i:{{ forloop.counter0 }}" data-label="{{ p.start|date:'d/m' }}{% if p.end != p.start %} - {{ p.end|date:'d/m' }}{% endif %}: {{ p.revenue|vnd }}, {{ p.done }} đơn" aria-label="{{ p.start|date:'d/m' }}: {{ p.revenue|vnd }}"></button>{% endfor %}
+    </div>
+  </div>
+  <div class="chart__axis" aria-hidden="true"><span>{{ chart.points.0.start|date:"d/m" }}</span><span>{{ chart.points|last|date_end }}</span></div>
+  {% else %}
+  <div class="empty"><span class="empty__ico">{% icon "chart" %}</span><p>Chưa có đơn hoàn thành trong kỳ này.</p></div>
+  {% endif %}
+</section>

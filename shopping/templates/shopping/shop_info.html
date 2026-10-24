@@ -1,0 +1,11 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>Thông tin gian hàng - {{ shop.name }}</h1>
+<p>Bạn sửa được mô tả, địa chỉ lấy hàng và thông tin liên hệ. Tên gian hàng và loại hình ({{ shop.get_shop_type_display }}) đã được Quản trị viên duyệt nên không tự đổi.</p></div>
+<form method="post" class="formcard">{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  <div class="actions"><button class="btn" type="submit">Lưu thông tin</button> <a class="btn btn--ghost" href="{% url 'manage_home' %}">Quay lại</a></div>
+</form>
+{% endblock %}

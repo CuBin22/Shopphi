@@ -1,0 +1,117 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đặt hàng - Shopphi{% endblock %}
+{% block content %}
+<div class="co-head">
+  <h1>{% icon "credit-card" %}Đặt hàng</h1>
+  <ol class="co-steps" aria-label="Các bước mua hàng">
+    <li class="is-done">{% icon "check" %}<span>Giỏ hàng</span></li>
+    <li class="is-current" aria-current="step"><b>2</b><span>Đặt hàng</span></li>
+    <li><b>3</b><span>Thanh toán</span></li>
+  </ol>
+  {% if buy_now %}<p class="co-head__note">Mua ngay: chỉ thanh toán sản phẩm bạn vừa chọn, giỏ hàng hiện có được giữ nguyên.{% if back_url %} <a class="textlink" href="{{ back_url }}">Quay lại sản phẩm</a>{% endif %}</p>{% else %}<p class="co-head__note">Giỏ hàng nhiều gian hàng sẽ được tách thành nhiều đơn riêng.</p>{% endif %}
+</div>
+
+<form method="post" class="co">
+  {% csrf_token %}
+  {% if buy_now %}<input type="hidden" name="mua_ngay" value="1">{% endif %}
+  <button type="submit" name="action" value="apply" class="sr" tabindex="-1" aria-hidden="true">Áp dụng mã</button>
+
+  <div class="co__main">
+    <section class="co-card" aria-labelledby="co-ship">
+      <h2 id="co-ship"><span class="co-card__ico">{% icon "map-pin" %}</span>Thông tin nhận hàng</h2>
+      <div class="co-grid">
+        <label class="co-field">Tên người nhận
+          <input name="name" value="{{ info.name }}" autocomplete="name" required>
+        </label>
+        <label class="co-field">Số điện thoại
+          <input name="phone" value="{{ info.phone }}" inputmode="tel" autocomplete="tel" required>
+        </label>
+        <label class="co-field co-field--full">Địa chỉ nhận hàng
+          <input name="address" value="{{ info.address }}" autocomplete="street-address" placeholder="Số nhà, đường, phường xã, quận huyện, tỉnh thành" required>
+        </label>
+      </div>
+      <label class="co-check"><input type="checkbox" name="save_default" value="1" {% if save_default %}checked{% endif %}><span>Lưu làm địa chỉ nhận hàng mặc định</span></label>
+    </section>
+
+    <section class="co-card" aria-labelledby="co-pay">
+      <h2 id="co-pay"><span class="co-card__ico">{% icon "wallet" %}</span>Phương thức thanh toán</h2>
+      <div class="co-pays" role="radiogroup" aria-labelledby="co-pay">
+        <label class="co-pay">
+          <input type="radio" name="payment_method" value="COD" {% if method == 'COD' %}checked{% endif %}>
+          <span class="co-pay__body">
+            <span class="co-pay__ico">{% icon "truck" %}</span>
+            <span class="co-pay__text"><strong>Thanh toán khi nhận hàng</strong><small>Trả tiền mặt cho nhân viên giao hàng khi nhận được sản phẩm.</small></span>
+            <span class="co-pay__tick">{% icon "check" %}</span>
+          </span>
+        </label>
+        <label class="co-pay">
+          <input type="radio" name="payment_method" value="CONG_THANH_TOAN" {% if method == 'CONG_THANH_TOAN' %}checked{% endif %}>
+          <span class="co-pay__body">
+            <span class="co-pay__ico">{% icon "credit-card" %}</span>
+            <span class="co-pay__text"><strong>Thanh toán trực tuyến qua {{ provider_label }}</strong><small>Thanh toán một lần cho cả nhóm đơn. Kho được giữ {{ hold_minutes }} phút.</small></span>
+            <span class="co-pay__tick">{% icon "check" %}</span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <section class="co-card" aria-labelledby="co-global">
+      <h2 id="co-global"><span class="co-card__ico">{% icon "tag" %}</span>Mã giảm giá toàn sàn</h2>
+      <div class="co-code">
+        <label class="sr" for="global_code">Mã giảm giá toàn sàn</label>
+        <input id="global_code" name="global_code" value="{{ global_code }}" placeholder="Ví dụ CHAOSHOPPHI" autocomplete="off">
+        <button class="btn btn--ghost" name="action" value="apply" type="submit">{% icon "percent" %}Áp dụng</button>
+      </div>
+      <p class="co-hint">Mỗi lần đặt hàng dùng tối đa một mã toàn sàn.</p>
+      {% if global_error %}<p class="co-msg co-msg--err">{% icon "alert" %}{{ global_error }}</p>{% elif co.global_coupon %}<p class="co-msg co-msg--ok">{% icon "circle-check" %}Đã áp mã {{ co.global_coupon.code }}, giảm {{ co.global_discount|vnd }}</p>{% endif %}
+    </section>
+
+    {% for p in co.parts %}
+    <section class="co-card co-shop" aria-labelledby="co-shop-{{ p.shop.pk }}">
+      <h2 id="co-shop-{{ p.shop.pk }}"><span class="co-card__ico">{% icon "store" %}</span>{{ p.shop.name }}<span class="co-tag">Đơn {{ forloop.counter }}</span></h2>
+      <ul class="co-items">
+        {% for r in p.rows %}
+        <li class="co-item">
+          <div class="tile tone-{{ r.v.product.pk|tone }} tile--thumb">{% if r.v.product.image %}<img class="tile__image" src="{{ r.v.product.image.url }}" alt="" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=r.v.product.category.slug %}{% endif %}</div>
+          <div class="co-item__main"><strong>{{ r.v.product.name }}</strong><small>{{ r.v.name }}</small></div>
+          <span class="co-item__qty">x{{ r.qty }}</span>
+          <strong class="co-item__total">{{ r.total|vnd }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+      <div class="co-code co-code--shop">
+        <label class="sr" for="coupon_{{ p.shop.pk }}">Mã giảm giá của gian hàng {{ p.shop.name }}</label>
+        <input id="coupon_{{ p.shop.pk }}" name="coupon_{{ p.shop.pk }}" value="{{ p.code }}" placeholder="Mã giảm giá của gian hàng" autocomplete="off">
+        <button class="btn btn--ghost btn--small" name="action" value="apply" type="submit">Áp dụng</button>
+      </div>
+      {% if p.error %}<p class="co-msg co-msg--err">{% icon "alert" %}{{ p.error }}</p>{% elif p.coupon %}<p class="co-msg co-msg--ok">{% icon "circle-check" %}Đã áp mã {{ p.coupon.code }}, giảm {{ p.shop_discount|vnd }}</p>{% endif %}
+      <dl class="co-sum">
+        <div><dt>Tạm tính</dt><dd>{{ p.subtotal|vnd }}</dd></div>
+        <div><dt>Giảm giá</dt><dd>{% if p.discount %}- {{ p.discount|vnd }}{% else %}0 đ{% endif %}</dd></div>
+        <div><dt>Phí vận chuyển</dt><dd>{% if p.shipping %}{{ p.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
+        <div class="co-sum__total"><dt>Tổng đơn</dt><dd>{{ p.total|vnd }}</dd></div>
+      </dl>
+    </section>
+    {% endfor %}
+  </div>
+
+  <aside class="co__side" aria-label="Tóm tắt đơn hàng">
+    <div class="co-total">
+      <h2>{% icon "receipt" %}Tóm tắt đơn hàng</h2>
+      <dl class="co-total__rows">
+        <div><dt>Tạm tính</dt><dd>{{ co.subtotal|vnd }}</dd></div>
+        <div><dt>Giảm giá</dt><dd>{% if co.discount %}- {{ co.discount|vnd }}{% else %}0 đ{% endif %}</dd></div>
+        <div><dt>Phí vận chuyển</dt><dd>{% if co.shipping %}{{ co.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
+      </dl>
+      <p class="co-total__grand"><span>Tổng thanh toán</span><strong>{{ co.total|vnd }}</strong></p>
+      <button class="btn btn--lg btn--block co-total__cta" name="action" value="place" type="submit">Đặt hàng</button>
+      <ul class="co-trust">
+        <li>{% icon "lock" %}Không lưu thông tin thẻ của bạn</li>
+        <li>{% icon "clock" %}Thanh toán trực tuyến được giữ kho {{ hold_minutes }} phút</li>
+        <li>{% icon "package" %}Mỗi gian hàng giao một đơn riêng</li>
+      </ul>
+    </div>
+  </aside>
+</form>
+{% endblock %}

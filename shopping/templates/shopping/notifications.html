@@ -1,0 +1,23 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Thông báo - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>{% icon "bell" %}Thông báo</h1><p>{% if unread_total %}{{ unread_total }} chưa đọc{% else %}Đã đọc hết{% endif %}</p></div>
+<div class="actions notes__bar">
+  <nav class="ordertabs" aria-label="Lọc thông báo">
+    <a href="?" {% if not only_unread %}aria-current="page"{% endif %}>Tất cả</a>
+    <a href="?chua_doc=1" {% if only_unread %}aria-current="page"{% endif %}>Chưa đọc{% if unread_total %} <span class="ordertabs__n">{{ unread_total }}</span>{% endif %}</a>
+  </nav>
+  {% if unread_total %}<form method="post" action="{% url 'notifications_read_all' %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn--small btn--ghost" type="submit">{% icon "check" %}Đánh dấu tất cả đã đọc</button></form>{% endif %}
+</div>
+<ul class="notes">
+{% for n in items %}
+  <li class="note{% if not n.read %} note--new{% endif %}">
+    <span class="note__ico">{% icon "bell" %}</span>
+    <div class="note__body"><a href="{% url 'notification_open' n.pk %}">{{ n.content }}</a><small>{{ n.created|date:"d/m/Y H:i" }}</small></div>
+    {% if not n.read %}<span class="pill">Mới</span>{% endif %}
+  </li>
+{% empty %}<li><div class="empty"><span class="empty__ico">{% icon "bell" %}</span><strong>{% if only_unread %}Không có thông báo chưa đọc.{% else %}Chưa có thông báo.{% endif %}</strong><p>Thông báo về đơn hàng, thanh toán và hoàn tiền sẽ hiện ở đây.</p></div></li>{% endfor %}
+</ul>
+{% include "shopping/_pager.html" %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% load shop_extras static %}<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Phiếu giao vận đơn #{{ o.pk }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="{% static 'catalog/css/app.css' %}"></head>
+<body><main class="slip">
+<p class="noprint"><button class="btn" onclick="window.print()">In phiếu</button> <a class="btn btn--ghost" href="{% url 'vendor_order_detail' o.pk %}">Quay lại đơn</a></p>
+<h1>PHIẾU GIAO VẬN - Đơn #{{ o.pk }}</h1>
+<p>Ngày đặt: {{ o.created|date:"d/m/Y H:i" }}{% if o.tracking_code %} &middot; {{ o.carrier }}: <strong>{{ o.tracking_code }}</strong>{% endif %}</p>
+<table><tr><th style="width:50%">Người gửi</th><th>Người nhận</th></tr>
+<tr><td><strong>{{ o.shop.name }}</strong><br>{{ o.shop.pickup_address }}<br>{{ o.shop.contact }}</td>
+<td><strong>{{ o.group.recipient_name }}</strong><br>{{ o.group.recipient_phone }}<br>{{ o.group.address }}</td></tr></table>
+<table><thead><tr><th>Sản phẩm</th><th>Biến thể</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead><tbody>
+{% for i in items %}<tr><td>{{ i.product_name }}</td><td>{{ i.variant_name }}</td><td>{{ i.qty }}</td><td>{{ i.unit_price|vnd }}</td><td>{{ i.line_total|vnd }}</td></tr>{% endfor %}
+</tbody></table>
+<p>Tạm tính {{ o.subtotal|vnd }} &middot; Giảm giá {{ o.discount|vnd }} &middot; Phí vận chuyển {{ o.shipping_fee|vnd }} &middot; <strong>Tổng {{ o.total|vnd }}</strong></p>
+<p style="font-size:1.4em"><strong>Thu hộ (COD): {{ cod_due|vnd }}</strong>{% if not cod_due %} (đã thanh toán hoặc thanh toán trực tuyến, không thu tiền){% endif %}</p>
+</main></body></html>

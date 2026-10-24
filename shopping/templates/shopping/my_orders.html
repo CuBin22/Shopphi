@@ -1,0 +1,47 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đơn hàng của tôi - Shopphi{% endblock %}
+{% block content %}
+<div class="resulthead"><h1>{% icon "package" %}Đơn hàng của tôi</h1><p>{{ page.paginator.count }} nhóm đơn{% if status or q %} khớp bộ lọc{% endif %}</p></div>
+
+<nav class="ordertabs" aria-label="Lọc theo trạng thái">
+  {% for key, label, n in tabs %}<a href="?trang_thai={{ key }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}" {% if status == key %}aria-current="page"{% endif %}>{{ label }}{% if n %} <span class="ordertabs__n">{{ n }}</span>{% endif %}</a>{% endfor %}
+</nav>
+
+<form method="get" class="filters">
+  <label>Tìm đơn<input type="text" name="q" value="{{ q }}" placeholder="Mã đơn, mã nhóm đơn, tên sản phẩm hoặc gian hàng" style="min-width:320px"></label>
+  <input type="hidden" name="trang_thai" value="{{ status }}">
+  <button class="btn" type="submit">{% icon "search" %}Tìm</button>
+  {% if q or status %}<a class="btn btn--ghost" href="{% url 'my_orders' %}">Xóa lọc</a>{% endif %}
+</form>
+
+{% for g in groups %}
+<section class="cartshop ordergroup">
+  <h2>{% icon "layers" %}Nhóm đơn #{{ g.pk }}
+    <span class="shop">{{ g.created|date:"d/m/Y H:i" }} &middot; {{ g.get_payment_method_display }} &middot; tổng {{ g.total|vnd }}</span></h2>
+  {% for o in g.shown %}
+  <div class="orderrow">
+    {% if o.first_item %}{% include "shopping/_thumb.html" with product=o.first_item.variant.product %}{% endif %}
+    <div class="orderrow__main">
+      <a class="textlink" href="{% url 'order_detail' o.pk %}">Đơn #{{ o.pk }}</a>
+      <span class="shop">{% icon "store" %}{{ o.shop.name }}</span>
+      <p class="shop">{% if o.first_item %}{{ o.first_item.product_name }}{% if o.items.all|length > 1 %} và {{ o.items.all|length|add:"-1" }} sản phẩm khác{% else %} &times; {{ o.first_item.qty }}{% endif %}{% endif %}</p>
+    </div>
+    <div class="orderrow__side">{% include "shopping/_status.html" %}<strong>{{ o.total|vnd }}</strong>
+      <a class="btn btn--small btn--ghost" href="{% url 'order_detail' o.pk %}">Xem chi tiết</a></div>
+  </div>
+  {% endfor %}
+  {% if g.can_pay %}
+  <form method="post" action="{% url 'pay_group' g.pk %}" target="_blank" rel="noopener" data-pay="{{ g.pk }}" data-status-url="{% url 'payment_status' g.pk %}" class="actions">{% csrf_token %}
+    <button class="btn btn--small" type="submit">{% icon "credit-card" %}Thanh toán ({{ provider_label }})</button>
+    {% if g.hold_until %}<span class="shop">Hạn giữ kho: {{ g.hold_until|date:"H:i d/m/Y" }}</span>{% endif %}
+  </form>
+  {% endif %}
+</section>
+{% empty %}
+<div class="empty"><span class="empty__ico">{% icon "package" %}</span>
+  <strong>{% if status or q %}Không có đơn hàng nào khớp.{% else %}Chưa có đơn hàng.{% endif %}</strong>
+  <p><a class="btn" href="{% url 'home' %}">Mua sắm ngay</a></p></div>
+{% endfor %}
+{% include "shopping/_pager.html" %}
+{% endblock %}

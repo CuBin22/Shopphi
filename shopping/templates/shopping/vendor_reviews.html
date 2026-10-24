@@ -1,0 +1,23 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "star" %}Đánh giá sản phẩm</h1>
+<p>{{ shop.name }}: {% if total %}{% rating_icons avg %} {{ avg|floatformat:1 }}/5 từ {{ total }} đánh giá{% else %}chưa có đánh giá nào.{% endif %}</p></div>
+{% if total %}
+<nav class="cats" aria-label="Lọc theo số sao">{% for n, c in dist %}<a href="?sao={{ n }}">{{ n }} sao ({{ c }})</a>{% endfor %}</nav>
+<form method="get" class="filters">
+  <select name="sao"><option value="">Mọi số sao</option>{% for n in "54321" %}<option value="{{ n }}" {% if stars == n %}selected{% endif %}>{{ n }} sao</option>{% endfor %}</select>
+  <select name="san_pham"><option value="">Mọi sản phẩm</option>{% for p in products %}<option value="{{ p.pk }}" {% if pid == p.pk|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}</select>
+  <button class="btn" type="submit">{% icon "filter" %}Lọc</button>
+</form>
+{% endif %}
+{% for r in reviews %}
+<div class="cartshop">
+  <p class="row"><a href="{{ r.product.get_absolute_url }}"><strong>{{ r.product.name }}</strong></a>{% rating_icons r.rating %}</p>
+  <p>{{ r.comment|default:"(Không có bình luận)" }}</p>
+  <p class="shop">{{ r.user.first_name|default:"Khách hàng" }} &middot; {{ r.created|date:"d/m/Y H:i" }}{% if r.order_id %} &middot; Đơn #{{ r.order_id }}{% endif %}</p>
+</div>
+{% empty %}<div class="empty"><p>Không có đánh giá nào khớp.</p></div>{% endfor %}
+{% include "shopping/_pager.html" %}
+
+{% endblock %}

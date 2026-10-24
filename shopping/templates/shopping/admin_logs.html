@@ -1,0 +1,10 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Nhật ký quản trị - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "history" %}Nhật ký quản trị</h1></div>
+<nav class="cats" aria-label="Lọc theo đối tượng"><a href="{% url 'admin_logs' %}" {% if not kind %}aria-current="page"{% endif %}>Tất cả</a>{% for k, l in kinds %}<a href="?loai={{ k }}" {% if kind == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+<div class="tablewrap"><table class="tbl"><thead><tr><th>Thời điểm</th><th>Đối tượng</th><th>Thao tác</th><th>Người thực hiện</th><th>Lý do</th></tr></thead><tbody>
+{% for l in logs %}<tr><td>{{ l.at|date:"d/m/Y H:i" }}</td><td>{{ l.get_target_type_display }}: {{ l.target_label }}</td><td><b>{{ l.action }}</b></td><td>{{ l.actor|default:"-" }}</td><td>{{ l.reason }}</td></tr>
+{% empty %}<tr><td colspan="5">Chưa có nhật ký.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

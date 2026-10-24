@@ -1,0 +1,23 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Đăng nhập - Shopphi{% endblock %}
+{% block content %}
+<div class="auth">
+<div class="auth__card">
+  <span class="auth__ico">{% icon "log-in" %}</span>
+  <h1>Đăng nhập</h1>
+  <p>Chào mừng bạn quay lại Shopphi.</p>
+  <form method="post">
+    {% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+    {% if form.non_field_errors %}<p class="msg msg--error">{{ form.non_field_errors.0 }}</p>{% endif %}
+    <label>Email hoặc số điện thoại{{ form.identifier }}</label>{{ form.identifier.errors }}
+    <label>Mật khẩu{{ form.password }}</label>{{ form.password.errors }}
+    <button class="btn btn--lg btn--block" type="submit">Đăng nhập</button>
+  </form>
+  <div class="auth__foot">
+    <p><a href="{% url 'forgot_password' %}">Quên mật khẩu?</a></p>
+    <p>Chưa có tài khoản? <a href="{% url 'register' %}">Đăng ký</a>. Sai 5 lần liên tiếp sẽ bị tạm khóa 15 phút.</p>
+  </div>
+</div>
+</div>
+{% endblock %}

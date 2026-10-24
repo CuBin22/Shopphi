@@ -1,0 +1,3 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}<div class="empty" style="margin-top:40px"><span class="empty__ico">{% icon "lock" %}</span><strong>Bạn không có quyền truy cập trang này.</strong><p><a class="btn" href="{% url 'home' %}">Về trang chủ</a></p></div>{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Mã giảm giá - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "percent" %}Mã giảm giá {% if role == 'QUAN_TRI' %}<span class="shop">toàn sàn và các gian hàng</span>{% else %}<span class="shop">của gian hàng</span>{% endif %}</h1></div>
+{% if coupons %}
+<div class="tablewrap"><table class="tbl"><thead><tr><th>Mã</th><th>Ưu đãi</th><th>Phạm vi</th><th class="num">Đơn tối thiểu</th><th class="num">Lượt dùng</th><th>Hết hạn</th><th></th></tr></thead><tbody>
+{% for c in coupons %}
+<tr><td><a class="textlink" href="{% url 'coupon_detail' c.pk %}">{{ c.code }}</a>{% if not c.is_active %} <span class="pill pill--warn">Tạm ngưng</span>{% endif %}</td>
+<td>{{ c.label }}</td><td>{% if c.shop %}{{ c.shop.name }}{% else %}Toàn sàn{% endif %}</td>
+<td class="num">{{ c.min_order|vnd }}</td><td class="num">{{ c.used_count }}/{{ c.max_uses }}</td><td>{{ c.expires|date:"d/m/Y" }}</td>
+<td class="num">{% if c.scope == 'GIAN_HANG' and role != 'QUAN_TRI' or c.scope == 'TOAN_SAN' and role == 'QUAN_TRI' %}<a class="btn btn--small btn--ghost" href="{% url 'coupon_edit' c.pk %}">{% icon "pencil" %}Sửa</a>
+<form method="post" action="{% url 'coupon_toggle' c.pk %}" class="inline">{% csrf_token %}<button class="btn btn--small btn--ghost" type="submit">{% if c.is_active %}Tạm ngưng{% else %}Bật lại{% endif %}</button></form>{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<div class="empty"><span class="empty__ico">{% icon "percent" %}</span><p>Chưa có mã giảm giá.</p></div>{% endif %}
+{% if can_create %}
+<form method="post" class="formcard" style="margin-top:20px"><h2>Tạo mã {% if role == 'QUAN_TRI' %}toàn sàn{% else %}cho gian hàng{% endif %}</h2>{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  <button class="btn" type="submit">{% icon "plus" %}Tạo mã</button></form>
+{% else %}<p class="msg msg--warning">Gian hàng cần ở trạng thái Hoạt động mới tạo được mã giảm giá.</p>{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}Quên mật khẩu - Shopphi{% endblock %}
+{% block content %}
+<div class="auth">
+<div class="auth__card">
+  <span class="auth__ico">{% icon "key" %}</span>
+  <h1>Quên mật khẩu</h1>
+  <p>Nhập Gmail (email) đã đăng ký. Chúng tôi gửi mã OTP 6 chữ số tới đúng email đó để bạn đặt lại mật khẩu.</p>
+  <form method="post">
+    {% csrf_token %}
+    <label>{{ form.identifier.label }}{{ form.identifier }}</label>{{ form.identifier.errors }}
+    <button class="btn btn--lg btn--block" type="submit">Gửi mã OTP</button>
+  </form>
+  <div class="auth__foot"><p><a href="{% url 'login' %}">Quay lại đăng nhập</a></p></div>
+</div>
+</div>
+{% endblock %}

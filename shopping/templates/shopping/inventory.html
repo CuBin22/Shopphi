@@ -1,0 +1,24 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "warehouse" %}Kho nhanh</h1>
+<p>Sửa giá và tồn kho nhiều biến thể rồi bấm <strong>Lưu thay đổi</strong>. Số lượng tồn được cộng trừ theo chênh lệch, nên đơn khách vừa đặt không bị ghi đè.</p></div>
+<nav class="cats"><a href="?q={{ q }}" {% if not loc %}aria-current="page"{% endif %}>Tất cả</a>
+<a href="?loc=sap_het&amp;q={{ q }}" {% if loc == 'sap_het' %}aria-current="page"{% endif %}>Sắp hết (&le; {{ low }}): {{ n_low }}</a>
+<a href="?loc=het&amp;q={{ q }}" {% if loc == 'het' %}aria-current="page"{% endif %}>Hết hàng: {{ n_out }}</a></nav>
+<form method="get" class="filters"><input name="q" value="{{ q }}" placeholder="Tìm sản phẩm hoặc biến thể"><input type="hidden" name="loc" value="{{ loc }}"> <button class="btn" type="submit">{% icon "search" %}Tìm</button></form>
+{% if variants %}
+<form method="post" class="invform">{% csrf_token %}
+<div class="tablewrap"><table class="tbl"><thead><tr><th>Sản phẩm</th><th>Biến thể</th><th>Giá bán (đ, gồm VAT)</th><th>Tồn kho</th></tr></thead><tbody>
+{% for v in variants %}
+<tr><td><span class="prodcell"><span class="tile tile--{{ v.product.category.slug }} tone-{{ v.product.pk|tone }} tile--mini">{% if v.product.image %}<img class="tile__image" src="{{ v.product.image.url }}" alt="" loading="lazy">{% endif %}</span> <a href="{% url 'product_edit' v.product.pk %}">{{ v.product.name }}</a></span></td>
+<td>{{ v.name }}</td>
+<td><input type="hidden" name="ids" value="{{ v.pk }}"><input type="number" name="price_{{ v.pk }}" value="{{ v.price|stringformat:'d' }}" min="1" step="1" required aria-label="Giá {{ v.name }}"></td>
+<td><input type="hidden" name="orig_stock_{{ v.pk }}" value="{{ v.stock }}"><input type="number" name="stock_{{ v.pk }}" value="{{ v.stock }}" min="0" step="1" required aria-label="Tồn kho {{ v.name }}">
+{% if v.stock == 0 %}<span class="pill pill--warn">Hết hàng</span>{% elif v.stock <= low %}<span class="pill pill--warn">Sắp hết</span>{% endif %}</td></tr>
+{% endfor %}</tbody></table></div>
+<p class="actions"><button class="btn" type="submit">{% icon "check" %}Lưu thay đổi</button> <a class="btn btn--ghost" href="{% url 'product_list' %}">Quay lại sản phẩm</a></p>
+</form>
+{% else %}<div class="empty"><p>Không có biến thể nào khớp.</p></div>{% endif %}
+{% include "shopping/_pager.html" %}
+{% endblock %}

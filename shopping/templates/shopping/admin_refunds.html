@@ -1,0 +1,16 @@
+{% extends "shopping/manage_base.html" %}
+{% load shop_extras %}
+{% block title %}Hoàn tiền - Shopphi{% endblock %}
+{% block manage %}
+<div class="resulthead"><h1>{% icon "wallet" %}Hoàn tiền</h1><p>Khoản đã thanh toán qua ZaloPay được hoàn bằng API ZaloPay Sandbox (không có tiền thật); khoản của cổng giả lập chỉ mô phỏng.</p></div>
+<div class="dash">
+<section class="panel"><div class="panel__head"><h2>{% icon "undo" %}Đơn đã thanh toán nhưng bị hủy</h2></div>
+{% for o in orders %}<div class="row"><span>Đơn #{{ o.pk }}, {{ o.shop.name }} <strong>{{ o.total|vnd }}</strong> <span class="pill pill--pay">{% if o.payment_txn.provider == 'ZALOPAY' %}ZaloPay{% else %}Giả lập{% endif %}</span></span>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="kind" value="order"><input type="hidden" name="id" value="{{ o.pk }}"><button class="btn btn--small">Hoàn tiền</button></form></div>
+{% empty %}<p class="shop">{% icon "circle-check" %}Không có đơn chờ hoàn tiền.</p>{% endfor %}</section>
+<section class="panel"><div class="panel__head"><h2>{% icon "clock" %}Giao dịch thanh toán muộn</h2></div>
+{% for t in txns %}<div class="row"><span>{{ t.ref }}, nhóm đơn #{{ t.group_id }} <strong>{{ t.amount|vnd }}</strong> <span class="pill pill--pay">{{ t.get_provider_display }}</span></span>
+<form method="post" class="inline">{% csrf_token %}<input type="hidden" name="kind" value="txn"><input type="hidden" name="id" value="{{ t.pk }}"><button class="btn btn--small">Hoàn tiền</button></form></div>
+{% empty %}<p class="shop">{% icon "circle-check" %}Không có giao dịch chờ hoàn tiền.</p>{% endfor %}</section>
+</div>
+{% endblock %}
