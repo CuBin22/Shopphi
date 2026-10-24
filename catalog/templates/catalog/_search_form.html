@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% load shop_extras %}
 <form class="search search--{{ variant }}" role="search" action="{% url 'search' %}" method="get"
       data-search data-url="{% url 'suggest' %}" autocomplete="off">
@@ -7,5 +8,14 @@
          maxlength="100" role="combobox" aria-expanded="false" aria-controls="sg-{{ variant }}" aria-autocomplete="list">
   <input type="hidden" name="goi_y" value="0">
   <button type="submit" aria-label="Tìm sản phẩm">{% icon "search" %}<span class="sr">Tìm</span></button>
+=======
+<form class="search search--{{ variant }}" role="search" action="{% url 'search' %}" method="get"
+      data-search data-url="{% url 'suggest' %}" autocomplete="off">
+  <label class="sr" for="q-{{ variant }}">Tìm sản phẩm</label>
+  <input id="q-{{ variant }}" type="search" name="q" value="{{ q|default:'' }}" placeholder="Tìm tai nghe, nồi chiên, đồ chơi..."
+         maxlength="100" role="combobox" aria-expanded="false" aria-controls="sg-{{ variant }}" aria-autocomplete="list">
+  <input type="hidden" name="goi_y" value="0">
+  <button type="submit">Tìm</button>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
   <ul class="suggest" id="sg-{{ variant }}" role="listbox" hidden></ul>
 </form>

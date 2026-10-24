@@ -68,8 +68,11 @@ def validate_coupon(code, scope, base, shop=None, now=None) -> Coupon:
         raise OrderError(f"Mã {code} là mã {'toàn sàn' if c.scope == Coupon.GLOBAL else 'của gian hàng'}, không nhập ở ô này.")
     if scope == Coupon.SHOP and c.shop_id != shop.pk:
         raise OrderError(f"Mã {code} không áp dụng cho gian hàng {shop.name}.")
+<<<<<<< HEAD
     if not c.is_active:
         raise OrderError(f"Mã {code} đang tạm ngưng.")
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     if now < c.starts:
         raise OrderError(f"Mã {code} chưa đến ngày bắt đầu.")
     if now > c.expires:
@@ -164,7 +167,11 @@ def build_checkout(lines, global_code="", shop_codes=None, now=None) -> Checkout
 
 def _consume(coupon: Coupon, now):
     """Tăng lượt dùng bằng UPDATE có điều kiện: không vượt số lượt tối đa dù nhiều khách đặt cùng lúc."""
+<<<<<<< HEAD
     n = Coupon.objects.filter(pk=coupon.pk, is_active=True, used_count__lt=F("max_uses"), starts__lte=now, expires__gte=now) \
+=======
+    n = Coupon.objects.filter(pk=coupon.pk, used_count__lt=F("max_uses"), starts__lte=now, expires__gte=now) \
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         .update(used_count=F("used_count") + 1)
     if n != 1:
         raise OrderError(f"Mã {coupon.code} vừa hết lượt hoặc hết hạn, vui lòng bỏ mã hoặc chọn mã khác.")
@@ -177,11 +184,18 @@ def _release(use: CouponUse):
 
 
 # ---------------------------------------------------------------- đặt hàng
+<<<<<<< HEAD
 def place_order(user, wanted, info, payment_method, global_code="", shop_codes=None, clear_cart=True):
     """Đặt hàng từ giỏ: kiểm tra tồn kho, áp mã, tách đơn theo gian hàng, trừ tồn kho. Trả về OrderGroup.
 
     wanted: {variant_id: qty}; info: {'name','phone','address'}.
     clear_cart=False: dùng cho "Mua ngay" (không đụng tới giỏ hàng hiện có).
+=======
+def place_order(user, wanted, info, payment_method, global_code="", shop_codes=None):
+    """Đặt hàng từ giỏ: kiểm tra tồn kho, áp mã, tách đơn theo gian hàng, trừ tồn kho. Trả về OrderGroup.
+
+    wanted: {variant_id: qty}; info: {'name','phone','address'}.
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     """
     if not wanted:
         raise OrderError("Giỏ hàng đang trống.")
@@ -237,8 +251,12 @@ def place_order(user, wanted, info, payment_method, global_code="", shop_codes=N
             _log(order, "", Order.PENDING, user, "Khách hàng đặt hàng")
             notify(part.shop.owner, f"Có đơn hàng mới #{order.pk} ({vnd(order.total)})", f"/quan-ly/don-hang/{order.pk}/")
 
+<<<<<<< HEAD
         if clear_cart:
             _clear_cart(user, list(wanted))
+=======
+        _clear_cart(user, list(wanted))
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     return group
 
 

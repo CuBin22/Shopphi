@@ -1,11 +1,15 @@
+<<<<<<< HEAD
 > Cập nhật: đã gỡ công cụ tạo dữ liệu/ảnh demo. Các ghi chú lịch sử bên dưới mô tả phiên bản cũ; dữ liệu hiện có không tự động bị xóa.
 
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 # Shopphi - sàn thương mại điện tử đa gian hàng (bản chạy thử)
 
 Đề tài **HeThongTMDTDaGianHang**: Django + PostgreSQL, giao diện Django template + JavaScript thuần.
 README này ghi lại toàn bộ quá trình làm, những gì **đã làm** và **chưa làm**.
 
 
+<<<<<<< HEAD
 ## 0. Tiến độ (cập nhật bản v6)
 
 **Đã làm xong:** toàn bộ chức năng ở mục 3. Bản v6 hoàn thiện module **Khách hàng**: trang **chi tiết đơn hàng** viết lại (tiến trình, tiền, mã giảm giá, thanh toán, vận chuyển, yêu cầu hủy, nhật ký bằng tiếng Việt, đánh giá), **danh sách đơn** có tab trạng thái / tìm kiếm / phân trang / nút thanh toán, **mua lại**, trang **Đánh giá của tôi**, **thông báo** (đánh dấu đã đọc từng cái và tất cả, lọc chưa đọc, phân trang), trang **Tài khoản của tôi** (sửa hồ sơ, đổi mật khẩu), giỏ hàng chặn đặt khi vượt tồn kho, checkout lưu địa chỉ mặc định. Xem mục 1.3. **172 test tự động đạt** (122 cũ + 50 mới, SQLite). Bản v6.1 sửa lỗi treo sau thanh toán ZaloPay (mục 1.4).
@@ -44,6 +48,12 @@ Không đưa mật khẩu ứng dụng vào mã nguồn. Test mới: `accounts/t
 - **Mua ngay** (trang chi tiết sản phẩm, cạnh nút *Thêm vào giỏ*): chọn biến thể + số lượng rồi bấm *Mua ngay* để sang thẳng trang **Đặt hàng** chỉ với sản phẩm đó (`POST /mua-ngay/` -> `/dat-hang/?mua-ngay=1`). Giỏ hàng hiện có **được giữ nguyên**, vẫn áp mã giảm giá, chọn COD / thanh toán trực tuyến (giữ kho 15 phút) như đặt hàng thường. Chưa đăng nhập thì chuyển tới trang đăng nhập; tài khoản Người bán bị chặn; hết hàng / vượt tồn kho / sản phẩm ngừng bán đều báo lỗi (kiểm tra lại lúc đặt). Nút tự vô hiệu khi biến thể hết hàng.
 - **Sửa lỗi trang chi tiết đơn của Người bán** (`/quan-ly/don-hang/<id>/`): trang bị lỗi 500 khi nhật ký trạng thái có dòng do **hệ thống** tự ghi (tự hủy do hết hạn thanh toán, tự chấp nhận yêu cầu hủy, tự hoàn thành sau 7 ngày). Nhật ký nay hiển thị tiếng Việt như trang của khách, người thực hiện rỗng hiện là "Hệ thống".
 - Test mới: `shopping/tests_buy_now.py` (15 test).
+=======
+## 0. Tiến độ (cập nhật bản v3)
+
+**Đã làm xong:** toàn bộ chức năng ở mục 3, gồm thanh toán trực tuyến qua ZaloPay Sandbox (tạo đơn, callback, truy vấn, đối soát, hoàn tiền); 59 test tự động đạt trên SQLite.
+**Chưa làm / chưa kiểm chứng:** gọi thử ZaloPay thật trên máy bạn; chạy test trên PostgreSQL; các mục "Chưa làm" ở mục 4 (ảnh sản phẩm, Celery/cron, xuất báo cáo, quên mật khẩu/OTP...). Việc đầu tiên: `python manage.py migrate` rồi `python manage.py test`.
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 ## 1. Cách chạy (Windows PowerShell)
 
@@ -56,11 +66,16 @@ pip install -r requirements.txt
 # PostgreSQL: mặc định DB "Shopphi", user postgres, localhost:5432 (xem Shopphi/settings.py).
 # Đổi bằng biến môi trường nếu cần: DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
 python manage.py migrate
+<<<<<<< HEAD
+=======
+python manage.py seed_demo --reset      # nạp dữ liệu mẫu (xóa dữ liệu đơn hàng cũ!)
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 python manage.py runserver
 ```
 
 Mở http://127.0.0.1:8000/ . Chưa có database thì tạo trước (pgAdmin hoặc `CREATE DATABASE "Shopphi" ENCODING 'UTF8';`).
 Nếu bạn đã chạy bản trước: chỉ cần `python manage.py migrate` (migration `catalog/0003` thêm bảng nhật ký quản trị, `shopping/0002` thêm hạn giữ kho và bảng giao dịch thanh toán; giữ nguyên dữ liệu cũ).
+<<<<<<< HEAD
 
 ### Sử dụng dữ liệu thật
 
@@ -173,6 +188,21 @@ File: `shopping/payments.py` (`reconcile_user`, đối soát trong `create_payme
 **Cách thử thủ công:** đặt hàng chọn thanh toán trực tuyến > *Thanh toán ngay* > ZaloPay mở ở tab mới, tab cũ hiện khung chờ > thanh toán (thẻ thử Napas của ZaloPay Sandbox) > dù tab ZaloPay có treo hay không, tab cũ tự sang trang đặt hàng thành công với trạng thái *Đã thanh toán* trong vài giây. Thử treo: đóng tab ZaloPay ngay sau khi nhập OTP, đợi vài giây hoặc bấm *Kiểm tra ngay*; hoặc mở *Đơn hàng của tôi*. Tự động: `python manage.py test shopping.tests_payment_wait`.
 
 ### Thanh toán ZaloPay Sandbox (bản v3)
+=======
+`seed_demo --reset` xóa toàn bộ sản phẩm, đơn hàng, giỏ, hội thoại và các tài khoản mẫu rồi nạp lại. Bỏ `--reset` nếu không muốn mất dữ liệu.
+
+### Tài khoản mẫu (mật khẩu `demo12345`)
+
+| Vai trò | Đăng nhập |
+| --- | --- |
+| Khách hàng | `khach1@shopphi.vn`, `khach2@shopphi.vn`, `khach3@shopphi.vn` |
+| Người bán (chủ 5 gian hàng theo thứ tự) | `ban1@shopphi.vn` ... `ban5@shopphi.vn` |
+| Quản trị viên | `admin` / `admin12345` |
+
+Mã giảm giá mẫu: `CHAOSHOPPHI` (toàn sàn, -10% tối đa 50.000đ, đơn từ 200.000đ), `GIAM30K` (toàn sàn, -30.000đ, chỉ 3 lượt), `SONG50K` (gian hàng Sóng Audio, -50.000đ, đơn từ 500.000đ).
+
+### Thanh toán ZaloPay Sandbox (bản v3 - mới)
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 Mặc định (`PAYMENT_PROVIDER=zalopay`) nút **Thanh toán ngay** gọi API ZaloPay `POST /v2/create`, rồi chuyển khách sang trang thanh toán ZaloPay.
 
@@ -231,6 +261,7 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 
 8. **Bản v3 - tích hợp ZaloPay Sandbox thật** (lần làm này). Đọc "ZaloPay APIs Integration Document" (v2) và làm: `shopping/zalopay.py` (gọi `/v2/create`, `/v2/query`, `/v2/refund`, `/v2/query_refund`, ký MAC bằng key1, xác thực callback bằng key2); tách lõi `payments._apply` dùng chung cho cổng giả lập và ZaloPay; callback + trang quay về + đối soát nền; hoàn tiền qua API; migration `shopping/0003_zalopay`; `shopping/tests_zalopay.py` (17 test mới). Chạy toàn bộ **59 test đều đạt** trên SQLite (42 test cũ + 17 mới). Môi trường làm việc vẫn không có mạng nên chưa gọi được ZaloPay thật (xem mục 4).
 
+<<<<<<< HEAD
 9. **Bản v4**: phân trang tất cả sản phẩm; quên mật khẩu OTP (`accounts/otp.py`, `accounts/sms.py`, migration `accounts/0002`, 22 test); lệnh `check_db` / `export_data` / `import_data` (11 test). Test viết xong phát hiện và sửa một lỗi: đếm số lần nhập sai OTP bị rollback do ném lỗi trong khối giao dịch (cho phép đoán mã vô hạn). Môi trường làm việc không có PostgreSQL và không có mạng nên chạy trên SQLite (cả trong bộ nhớ lẫn file thật cho vòng seed > export > import) và gửi mail dùng backend kiểm thử.
 
 10. **Bản v5**: module Người bán và ảnh sản phẩm (`catalog/images.py`, `catalog/demo_images.py`, `shopping/vendor_views.py`, `shopping/product_views.py` viết lại; model `ProductImage`, trường `Coupon.is_active`; 30 test mới trong `shopping/tests_vendor.py`). Viết test phát hiện và sửa 2 lỗi: (1) tên ảnh bìa cũ được đọc sau khi form đã gán ảnh mới nên file cũ không bao giờ bị dọn (rác tích tụ trong `media/`); (2) danh sách sản phẩm phân trang không có thứ tự rõ ràng nên có thể trùng/mất sản phẩm giữa các trang. Môi trường làm việc vẫn không có PostgreSQL và không có trình duyệt, nên giao diện chỉ kiểm tra bằng test HTTP và đọc HTML, chưa nhìn thấy bằng mắt.
@@ -239,6 +270,8 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 
 12. **Bản v6.1**: sửa lỗi treo sau thanh toán ZaloPay và kiểm tra số tiền gửi sang ZaloPay (xem mục 1.4). Chụp dữ liệu thật gửi tới `/v2/create` bằng đơn nhiều gian hàng có mã giảm giá để xác nhận số tiền đúng; thêm endpoint trạng thái thanh toán, JS chờ ở tab cũ, đối soát khi mở trang đơn, chặn Thanh toán muộn oan khi bấm thanh toán lại; 11 test mới, toàn bộ 172 test đạt.
 
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 ## 3. Đã làm (khớp tài liệu)
 
 | Chức năng | Tham chiếu | Ghi chú |
@@ -250,11 +283,16 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 | Đặt hàng, tách đơn theo gian hàng | UC06, FR08, QĐ9 | Một giao dịch DB; khóa dòng tồn kho; trừ kho bằng UPDATE có điều kiện; đơn giá lưu cố định; tổng nhóm = tổng các đơn; COD |
 | Mã giảm giá | UC14, FR06, QĐ7 | Mã toàn sàn (Admin) và mã gian hàng (Người bán); 1 mã toàn sàn mỗi lần đặt và 1 mã gian hàng mỗi đơn; phân bổ theo tỷ lệ tạm tính, làm tròn xuống, dư vào đơn lớn nhất; tăng lượt dùng an toàn khi đặt đồng thời; hoàn lượt khi hủy; lịch sử áp dụng (BM7) |
 | Xử lý đơn của Người bán | UC15, FR09, QĐ10 | Chuyển tuần tự; mã vận đơn duy nhất theo đơn vị vận chuyển; chặn giao khi còn yêu cầu hủy; Hoàn thành do khách xác nhận hoặc tự động sau 7 ngày |
+<<<<<<< HEAD
 | Theo dõi đơn | UC08, FR16 | **v6:** danh sách có tab trạng thái, tìm kiếm, phân trang; chi tiết có tiến trình, mã giảm giá, thanh toán, vận chuyển, lịch sử yêu cầu hủy, nhật ký tiếng Việt; mua lại; chỉ xem đơn của mình (xem mục 1.3) |
+=======
+| Theo dõi đơn | UC08, FR16 | Danh sách theo nhóm đơn, chi tiết, nhật ký trạng thái, chỉ xem đơn của mình |
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 | Hủy đơn, hoàn kho | UC09, FR10, QĐ11 | Chờ xác nhận: hủy ngay. Đã xác nhận: gửi yêu cầu, Người bán chấp nhận hoặc từ chối (ghi lý do), tự chấp nhận sau 24 giờ. Người bán hủy phải có lý do. Hoàn kho, hoàn lượt mã, ghi nhật ký trong cùng giao dịch |
 | Đánh giá sản phẩm | UC10, FR12, QĐ13 | Chỉ đơn Hoàn thành; 1-5 sao; một lần cho mỗi sản phẩm; hiện ở trang chi tiết kèm điểm trung bình |
 | Chatbot AI | UC11, FR19, FR24, QĐ12 | Kiểm tra độ dài (300 ký tự) và tần suất (8 tin/phút); chuẩn hóa không dấu, tách từ, nhận diện ý định; lấy giá, tồn kho, thông số từ DB; che email, SĐT, số thẻ trước khi ghi log và gửi LLM; từ chối câu hỏi ngoài phạm vi hoặc thiếu dữ liệu; lỗi LLM thì báo thân thiện; **hội thoại lưu và nạp lại từ PostgreSQL** |
 | Thống kê và báo cáo | UC19, FR15, QĐ16 | Đơn hoàn thành, doanh thu (tạm tính trừ giảm giá, không gồm phí vận chuyển, theo SQL v3), hủy thủ công và hủy tự động, tồn kho hiện tại; chặn kỳ chứa ngày tương lai; Admin xem toàn sàn hoặc từng gian hàng và từ khóa phổ biến |
+<<<<<<< HEAD
 | Thông báo trên website | UC20, FR25 | Đơn mới, đổi trạng thái, yêu cầu hủy, duyệt/khóa gian hàng. **v6:** đánh dấu đã đọc từng cái (bấm vào thông báo) và tất cả, lọc chưa đọc, phân trang |
 | **Module Khách hàng hoàn thiện** (v6) | UC05, UC06, UC08, UC10, UC20, FR07, FR08, FR12, FR16, FR25 | Xem bảng ở mục 1.3: chi tiết đơn, danh sách đơn, mua lại, đánh giá của tôi, thông báo, tài khoản của tôi, đổi mật khẩu, chặn đặt khi vượt tồn kho, lưu địa chỉ mặc định |
 | **Thanh toán trực tuyến Sandbox** (mới) | UC07, FR11, FR22, FR23, NFR02, NFR15 | Cổng giả lập có nhãn SANDBOX, không nhận thông tin thẻ; một giao dịch cho cả nhóm đơn; mỗi nhóm chỉ một giao dịch đang hiệu lực (ràng buộc duy nhất trong DB); giữ kho 15 phút tính từ lúc đặt, thanh toán lại không kéo dài hạn; kết quả cổng được ký HMAC-SHA256, đối chiếu chữ ký + số tiền + mã giao dịch + mã nhóm đơn; mỗi giao dịch chỉ cập nhật đơn một lần (kết quả trùng bị bỏ qua); quá hạn tự hủy giao dịch + đơn + hoàn kho; kết quả thành công đến muộn (đơn đã hủy, hết hạn, hoặc nhóm đã thanh toán bằng giao dịch khác) ghi **Thanh toán muộn** và chuyển Chờ hoàn tiền; hủy đơn chưa thanh toán làm giao dịch đang chờ hết hiệu lực; hoàn tiền mô phỏng do Admin hoàn tất |
@@ -262,6 +300,10 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 | **Quên mật khẩu bằng OTP** (v4) | FR01 mở rộng (Open Issue UC02) | OTP gửi email hoặc SMS tới đúng email/SĐT đăng ký; băm mã, hết hạn, giới hạn số lần sai và tần suất gửi; không lộ tài khoản có tồn tại; đặt lại xong gỡ khóa đăng nhập |
 | **Hiển thị tất cả sản phẩm** (v4) | UC03 | Phân trang 24 sản phẩm/trang, mục Tất cả sản phẩm ở trang chủ, bộ lọc giữ nguyên khi chuyển trang |
 | **Sao lưu / nạp dữ liệu PostgreSQL** (v4) | NFR13 | `check_db`, `export_data`, `import_data` (một giao dịch, đặt lại sequence) |
+=======
+| Thông báo trên website | FR25 | Đơn mới, đổi trạng thái, yêu cầu hủy, duyệt/khóa gian hàng |
+| **Thanh toán trực tuyến Sandbox** (mới) | UC07, FR11, FR22, FR23, NFR02, NFR15 | Cổng giả lập có nhãn SANDBOX, không nhận thông tin thẻ; một giao dịch cho cả nhóm đơn; mỗi nhóm chỉ một giao dịch đang hiệu lực (ràng buộc duy nhất trong DB); giữ kho 15 phút tính từ lúc đặt, thanh toán lại không kéo dài hạn; kết quả cổng được ký HMAC-SHA256, đối chiếu chữ ký + số tiền + mã giao dịch + mã nhóm đơn; mỗi giao dịch chỉ cập nhật đơn một lần (kết quả trùng bị bỏ qua); quá hạn tự hủy giao dịch + đơn + hoàn kho; kết quả thành công đến muộn (đơn đã hủy, hết hạn, hoặc nhóm đã thanh toán bằng giao dịch khác) ghi **Thanh toán muộn** và chuyển Chờ hoàn tiền; hủy đơn chưa thanh toán làm giao dịch đang chờ hết hiệu lực; hoàn tiền mô phỏng do Admin hoàn tất |
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 | **Thanh toán ZaloPay Sandbox** (v3) | UC07, FR11, FR22, FR23, NFR02, NFR04, NFR10 | Tạo đơn `/v2/create` (`app_trans_id` = yymmdd giờ VN + mã giao dịch, `amount` = tổng các đơn còn hiệu lực chưa thanh toán của nhóm, `item` liệt kê từng đơn, `embed_data.redirecturl`, MAC HMAC-SHA256 key1); không gửi thông tin cá nhân (app_user = `user<id>`); **callback** `/thanh-toan/zalopay/callback/` xác thực MAC key2, đối chiếu app_id + mã giao dịch + số tiền, mỗi giao dịch chỉ cập nhật đơn một lần (trả `return_code` 1 / 2 trùng / -1 từ chối); **trang quay về** không tin tham số URL mà hỏi lại `/v2/query`; **đối soát** trước khi hủy vì hết hạn giữ kho (không hủy nhầm đơn khách đã trả tiền mà callback bị lỡ; trả tiền đúng hạn nhưng kết quả về trễ vẫn tính là đúng hạn nhờ `server_time`) và bằng `process_timeouts`; tạo đơn lỗi thì giao dịch về Thất bại để thanh toán lại; kết quả thành công đến sau khi giao dịch đã Thất bại/Hết hạn/Hết hiệu lực thì thành **Thanh toán muộn** (không nuốt tiền); **hoàn tiền** `/v2/refund` + `/v2/query_refund`, lưu `RefundRecord` trước khi gọi để không hoàn hai lần; đơn ghi nhớ giao dịch đã trả (`Order.payment_txn`); cổng giả lập vẫn dùng được (`PAYMENT_PROVIDER=sandbox`) |
 | **Người bán quản lý sản phẩm** (v2) | UC13, FR04, BM5, QĐ5 | Thêm / sửa / ẩn-hiện / xóa; danh mục, thương hiệu, thẻ, mô tả, thông số; nhiều biến thể với giá (>0, đã gồm VAT) và tồn kho (>=0); chỉ khi gian hàng Hoạt động; chỉ thao tác sản phẩm của gian hàng mình (sản phẩm gian hàng khác trả 404); xóa sản phẩm đã có đơn chỉ ẩn (xóa mềm), chưa có đơn thì xóa hẳn; không xóa biến thể đã phát sinh đơn; sản phẩm bị gỡ thì Người bán không tự hiển thị lại; tìm kiếm / gợi ý từ khóa tự cập nhật số sản phẩm khớp |
 | **Admin: duyệt, khóa, gỡ, khôi phục** (mới) | UC16, UC17, UC18, NFR09 | Giao diện riêng: duyệt / từ chối / khóa / mở khóa gian hàng theo đúng luồng trạng thái của SQL v3 (Từ chối -> Chờ duyệt do Người bán sửa và gửi lại); gỡ và khôi phục sản phẩm (khôi phục về trạng thái Ẩn); ẩn/hiện từ khóa; bắt buộc ghi lý do; thông báo cho Người bán; **nhật ký quản trị** (xem tại Kênh quản lý > Nhật ký quản trị, và cả khi thao tác trong `/admin/`) |
@@ -276,6 +318,7 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 - Cần bạn đối chiếu với tài liệu/cổng merchant ZaloPay: (1) `ZALOPAY_KEY2` mặc định của app demo 2553 do tôi nhớ lại, **chưa kiểm chứng**, hãy dùng khóa của merchant Sandbox của bạn; (2) tên tham số ZaloPay thêm vào URL quay về (code đọc `apptransid`, nhưng không tin các tham số khác nên sai tên thì chỉ mất bước tự chốt, đối soát nền vẫn chốt được); (3) tài liệu ghi `return_code` khác 1/2 trong phản hồi callback là "không gọi lại", code trả `0` cho lỗi hệ thống tạm thời, hãy kiểm tra hành vi gọi lại thực tế.
 - Đơn ZaloPay có hiệu lực tối đa 15 phút kể từ lúc tạo, còn hạn giữ kho tính từ lúc đặt hàng, nên khách có thể trả tiền sau khi đơn đã bị hủy vì quá hạn; trường hợp này đã được xử lý bằng Thanh toán muộn + hoàn tiền, không mất tiền. Chưa dùng tham số rút ngắn hạn đơn ZaloPay cho khớp hạn giữ kho.
 - Hoàn tiền một phần của một giao dịch trả cho nhiều đơn dựa trên việc ZaloPay cho phép hoàn từng phần; chưa kiểm chứng trên Sandbox. Đơn dùng khuyến mãi của ZaloPay có thể bắt buộc hoàn toàn bộ (theo tài liệu).
+<<<<<<< HEAD
 - **Quên mật khẩu:** chưa gửi thử email/SMS thật (không có mạng); SMS chỉ có sẵn Twilio (chưa kiểm chứng với dịch vụ thật; Twilio thử nghiệm thường chỉ gửi tới số đã xác minh) và điểm nối cho nhà cung cấp Việt Nam, chưa tích hợp sẵn eSMS/SpeedSMS. Chưa có OTP khi đăng ký (xác minh email/SĐT) và chưa đổi mật khẩu khi đã đăng nhập.
 - **Sao lưu:** `export_data` đọc cả dữ liệu vào bộ nhớ nên phù hợp dữ liệu cỡ đồ án; dữ liệu lớn dùng `pg_dump`. Không sao lưu ảnh trong `media/`.
 - Chưa có giao diện admin xem danh sách `RefundRecord` riêng (xem được trong `/admin/` nếu đăng ký; hiện chỉ hiển thị trạng thái qua nút Hoàn tiền).
@@ -293,6 +336,11 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
   - **Thanh toán (v6.1) chưa kiểm chứng với ZaloPay thật**: toàn bộ kiểm tra dùng phản hồi giả lập. Chưa xác nhận được trang giả lập ngân hàng Napas hiển thị "20 000 VND" là do trang đó hay do dữ liệu gửi đi (dữ liệu gửi đi đã kiểm tra là đúng, xem mục 1.4). Việc ZaloPay Sandbox treo ở trang kết quả nằm ngoài mã dự án; v6.1 chỉ giúp website tự phát hiện thanh toán xong. Khung chờ ở tab cũ (`pay.js`) chưa được thử trên trình duyệt thật; nếu trình duyệt chặn mở tab mới, hãy cho phép cửa sổ bật lên của trang web.
   - Khi chạy local không có `ZALOPAY_CALLBACK_URL` công khai, kết quả chỉ về nhờ hỏi lại ZaloPay (đối soát), có thể trễ vài giây so với khi có callback.
   - Thay đổi hành vi cần biết: trang Thông báo không còn tự đánh dấu đã đọc khi mở.
+=======
+- Chưa có giao diện admin xem danh sách `RefundRecord` riêng (xem được trong `/admin/` nếu đăng ký; hiện chỉ hiển thị trạng thái qua nút Hoàn tiền).
+- Hết hạn giữ kho và các tác vụ theo hạn vẫn chạy "lười" khi mở trang đơn hàng / kênh quản lý, hoặc bằng `python manage.py process_timeouts --loop 60` (chưa dùng Celery/cron).
+- Sản phẩm chưa có tải **hình ảnh** (tài liệu chưa quy định giới hạn ảnh, mục Open Issues UC13).
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 - Ngoài phạm vi theo tài liệu (hướng mở rộng): quên mật khẩu, xác minh OTP, sửa/xóa đánh giá và kiểm duyệt bình luận, xuất báo cáo ra Excel/PDF, hồ sơ giấy tờ gian hàng, tính phí vận chuyển theo khu vực, tích hợp API đơn vị vận chuyển, hoàn tiền thật, giao hàng thất bại / trả hàng.
 - Giao diện là Django template + JS thuần, không tách React; chưa chạy HTTPS (cấu hình khi triển khai).
 
@@ -310,11 +358,18 @@ Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu t
 
 ```
 Shopphi/            cấu hình, urls
+<<<<<<< HEAD
 accounts/           hồ sơ và vai trò, đăng ký/đăng nhập, khóa đăng nhập, phiên hết hạn, quên mật khẩu OTP (otp.py, sms.py), tài khoản của tôi và đổi mật khẩu (v6)
 catalog/            sản phẩm + ảnh (images.py), tìm kiếm có phân trang, gợi ý + lệnh check_db / export_data / import_data
 shopping/           giỏ hàng, đặt hàng, mã giảm giá, hủy đơn, đánh giá, thống kê, kênh quản lý
                     customer_views.py (v6: danh sách và chi tiết đơn, mua lại, đánh giá của tôi, thông báo), tests_customer.py (39 test v6), tests_payment_wait.py (11 test v6.1)
                     payments.py (thanh toán: lõi chung, cổng giả lập, ZaloPay, hoàn tiền), zalopay.py (gọi API ZaloPay + ký MAC), moderation.py (duyệt/khóa/gỡ), product_views.py (Người bán quản lý sản phẩm, ảnh, kho nhanh), vendor_views.py (đánh giá, thông tin gian hàng, phiếu giao vận, vòng đời mã giảm giá),
+=======
+accounts/           hồ sơ và vai trò, đăng ký/đăng nhập, khóa đăng nhập, phiên hết hạn
+catalog/            sản phẩm, tìm kiếm, gợi ý (bản trước) + cột mới cho gian hàng
+shopping/           giỏ hàng, đặt hàng, mã giảm giá, hủy đơn, đánh giá, thống kê, kênh quản lý
+                    payments.py (thanh toán: lõi chung, cổng giả lập, ZaloPay, hoàn tiền), zalopay.py (gọi API ZaloPay + ký MAC), moderation.py (duyệt/khóa/gỡ), product_views.py (Người bán quản lý sản phẩm),
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
                     admin_views.py (giao diện Quản trị viên), tests.py + tests_v2.py + tests_zalopay.py
 chatbot/            hội thoại, che thông tin cá nhân, gọi LLM, API JSON
 ```

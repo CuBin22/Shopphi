@@ -3,19 +3,30 @@ from datetime import timedelta
 
 from django import forms
 from django.contrib import messages
+<<<<<<< HEAD
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Count, Q, Sum
+=======
+from django.db.models import Count, Q
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
 from accounts.utils import get_role, role_required
+<<<<<<< HEAD
 from catalog.models import Product, Shop, Variant
 
 from . import reports, services
 from .models import CancelRequest, Coupon, Order, OrderItem
+=======
+from catalog.models import Shop
+
+from . import reports, services
+from .models import CancelRequest, Coupon, Order
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from .services import OrderError
 
 vendor_only = role_required(Profile.VENDOR)
@@ -38,6 +49,7 @@ def manage_home(request):
             services.run_timeouts()
             counts = dict(Order.objects.filter(shop=shop).values_list("status").annotate(n=Count("id")))
             ctx["counts"] = [(label, counts.get(key, 0), key) for key, label in Order.STATUS]
+<<<<<<< HEAD
             ctx["pipeline_total"] = sum(n for _, n, _ in ctx["counts"])
             ctx["pipeline"] = [(label, n, key, round(n * 100 / ctx["pipeline_total"], 2) if ctx["pipeline_total"] else 0)
                                for label, n, key in ctx["counts"]]
@@ -104,6 +116,14 @@ def _vendor_kpis(shop):
     }
 
 
+=======
+            ctx["pending_cancel"] = CancelRequest.objects.filter(order__shop=shop, result=CancelRequest.PENDING).count()
+    else:
+        ctx["shops_pending"] = Shop.objects.filter(status=Shop.PENDING).count()
+    return render(request, "shopping/manage_home.html", ctx)
+
+
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 # ------------------------------------------------------- đăng ký gian hàng (UC12)
 class ShopForm(forms.ModelForm):
     class Meta:
@@ -159,6 +179,7 @@ def vendor_orders(request):
         return redirect("manage_home")
     services.run_timeouts()
     status = request.GET.get("trang_thai", "")
+<<<<<<< HEAD
     pay = request.GET.get("thanh_toan", "")
     q = request.GET.get("q", "").strip()
     d_from, d_to = request.GET.get("tu_ngay", ""), request.GET.get("den_ngay", "")
@@ -187,6 +208,15 @@ def vendor_orders(request):
     return render(request, "shopping/vendor_orders.html", {
         "shop": shop, "orders": orders, "page": page, "page_query": keep.urlencode(), "status": status, "statuses": Order.STATUS,
         "pay": pay, "pay_statuses": Order.PAY_STATUS, "q": q, "d_from": d_from, "d_to": d_to})
+=======
+    qs = Order.objects.filter(shop=shop).select_related("group").prefetch_related("items", "cancel_requests")
+    if status in dict(Order.STATUS):
+        qs = qs.filter(status=status)
+    orders = list(qs[:100])
+    for o in orders:
+        o.has_pending = any(r.result == CancelRequest.PENDING for r in o.cancel_requests.all())
+    return render(request, "shopping/vendor_orders.html", {"shop": shop, "orders": orders, "status": status, "statuses": Order.STATUS})
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 @vendor_only
@@ -218,7 +248,11 @@ def vendor_order_detail(request, pk):
         return redirect("vendor_order_detail", pk=pk)
     order.refresh_from_db()
     return render(request, "shopping/vendor_order_detail.html", {
+<<<<<<< HEAD
         "o": order, "items": order.items.select_related("variant__product__category"), "logs": order.status_logs.select_related("actor"),
+=======
+        "o": order, "items": order.items.all(), "logs": order.status_logs.select_related("actor"),
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         "pending": order.pending_cancel, "requests": order.cancel_requests.all(),
     })
 
@@ -272,8 +306,12 @@ def coupon_detail(request, pk):
     qs = Coupon.objects.select_related("shop")
     c = get_object_or_404(qs if role == Profile.ADMIN else qs.filter(shop__owner=request.user), pk=pk)
     uses = c.uses.select_related("user", "order", "group")
+<<<<<<< HEAD
     can_manage = (role == Profile.ADMIN and c.scope == Coupon.GLOBAL) or (role == Profile.VENDOR and c.shop_id and c.shop.owner_id == request.user.pk)
     return render(request, "shopping/coupon_detail.html", {"c": c, "uses": uses, "can_manage": can_manage})
+=======
+    return render(request, "shopping/coupon_detail.html", {"c": c, "uses": uses})
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 # ------------------------------------------------------------- thống kê (UC19)
@@ -308,6 +346,7 @@ def stats_view(request):
         "cancel_manual": sum(r["cancel_manual"] for r in rows), "cancel_auto": sum(r["cancel_auto"] for r in rows),
         "stock": sum(r["stock"] for r in rows),
     }
+<<<<<<< HEAD
     chart = None
     if not error:
         one = shops.first() if role == Profile.VENDOR or shop_filter.isdigit() else None
@@ -317,6 +356,10 @@ def stats_view(request):
             r["pct"] = round(r["revenue"] * 100 / peak, 2) if peak else 0
     return render(request, "shopping/stats.html", {
         "chart": chart, "rows": rows, "totals": totals, "error": error, "d_from": d_from.isoformat(), "d_to": d_to.isoformat(),
+=======
+    return render(request, "shopping/stats.html", {
+        "rows": rows, "totals": totals, "error": error, "d_from": d_from.isoformat(), "d_to": d_to.isoformat(),
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         "role": role, "all_shops": all_shops, "shop_filter": shop_filter, "today": today.isoformat(),
         "keywords": reports.popular_keywords() if role == Profile.ADMIN else None,
     })

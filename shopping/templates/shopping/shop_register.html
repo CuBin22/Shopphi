@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block manage %}
+=======
+{% extends "catalog/base.html" %}
+{% block content %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 <div class="resulthead"><h1>{% if resubmit %}Sửa và gửi lại xét duyệt{% else %}Đăng ký gian hàng{% endif %}</h1></div>
 <form method="post" class="formcard">{% csrf_token %}
   {{ form.non_field_errors }}

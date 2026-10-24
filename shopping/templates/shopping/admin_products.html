@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block title %}Sản phẩm vi phạm - Shopphi{% endblock %}
@@ -16,4 +17,22 @@
   </form>
 </div>
 {% empty %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>Không có sản phẩm.</p></div>{% endfor %}
+=======
+{% extends "catalog/base.html" %}
+{% block content %}
+<div class="resulthead"><h1>Gỡ / khôi phục sản phẩm vi phạm</h1><p>Sản phẩm bị gỡ không còn trong tìm kiếm, gợi ý từ khóa, gợi ý sản phẩm và chatbot. Khôi phục đưa sản phẩm về trạng thái Ẩn; Người bán tự chọn Hiển thị lại.</p></div>
+<form method="get" class="inline"><input name="q" value="{{ q }}" placeholder="Tên sản phẩm, gian hàng, thương hiệu"> <button class="btn btn--small" type="submit">Tìm</button></form>
+<nav class="cats"><a href="{% url 'admin_products' %}" {% if not status %}aria-current="page"{% endif %}>Tất cả</a>{% for k, l in statuses %}<a href="?trang_thai={{ k }}{% if q %}&q={{ q }}{% endif %}" {% if status == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+{% for p in products %}
+<div class="cartshop">
+  <p class="row"><strong>{{ p.name }}</strong><span><span class="pill">{{ p.get_status_display }}</span> {{ p.shop.name }} &middot; {{ p.category.name }}</span></p>
+  {% if p.status == 'BI_GO' %}<p class="warn">Lý do gỡ: {{ p.removal_reason }}</p>{% endif %}
+  <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="product" value="{{ p.pk }}">
+    <input name="reason" placeholder="Lý do (bắt buộc)">
+    {% if p.status == 'BI_GO' %}<button class="btn btn--small" name="action" value="restore">Khôi phục</button>
+    {% else %}<button class="btn btn--small btn--ghost" name="action" value="remove">Gỡ sản phẩm</button>{% endif %}
+  </form>
+</div>
+{% empty %}<div class="empty"><p>Không có sản phẩm.</p></div>{% endfor %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

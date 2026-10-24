@@ -5,7 +5,16 @@ from django.dispatch import receiver
 from .models import Product, Shop, Variant
 
 
+<<<<<<< HEAD
 def _lam_moi():
+=======
+ENABLED = True  # lệnh seed_demo tạm tắt để không làm mới từ khóa sau mỗi lần lưu
+
+
+def _lam_moi():
+    if not ENABLED:
+        return
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     from .services import refresh_keyword_counts
     transaction.on_commit(refresh_keyword_counts)
 
@@ -15,6 +24,7 @@ def _lam_moi():
 @receiver(post_save, sender=Shop)
 def cap_nhat_so_san_pham_khop(sender, **kwargs):
     """Số sản phẩm khớp của từ khóa thay đổi khi sản phẩm đổi trạng thái hiển thị (QĐ15)."""
+<<<<<<< HEAD
     if kwargs.get("raw"):          # đang nạp dữ liệu (loaddata/import_data): lệnh nạp tự làm mới một lần ở cuối
         return
     _lam_moi()
@@ -37,3 +47,6 @@ def _xoa_anh_bia(sender, instance, **kwargs):
 def _xoa_anh_phu(sender, instance, **kwargs):
     if instance.image:
         delete_file_later(instance.image.storage, instance.image.name)
+=======
+    _lam_moi()
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

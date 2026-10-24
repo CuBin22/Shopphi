@@ -1,11 +1,17 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block manage %}
+=======
+{% extends "catalog/base.html" %}
+{% block content %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 <div class="resulthead"><h1>{% if product %}Sửa sản phẩm{% else %}Thêm sản phẩm{% endif %} - {{ shop.name }}</h1>
 <p>Giá bán nhập là giá <strong>đã gồm VAT</strong>, lớn hơn 0; số lượng tồn không âm. Danh mục, thẻ phân loại và thông số là dữ liệu cho tìm kiếm, gợi ý và chatbot.</p></div>
 {% if product and product.status == 'BI_GO' %}<p class="msg msg--error">Sản phẩm đang bị Quản trị viên gỡ. Lý do: {{ product.removal_reason }}</p>{% endif %}
 <form method="post" enctype="multipart/form-data" class="formcard">{% csrf_token %}
   {{ form.non_field_errors }}
+<<<<<<< HEAD
   {% for f in form %}{% if f.name != 'image' %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endif %}{% endfor %}
 
   <h2>Hình ảnh sản phẩm</h2>
@@ -29,6 +35,13 @@
   {{ fs.management_form }}
   {{ fs.non_form_errors }}
   <div id="variant-rows">
+=======
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  {% if product and product.image %}<p class="shop">Ảnh hiện tại:</p><img class="product-preview" src="{{ product.image.url }}" alt="Ảnh {{ product.name }}">{% endif %}
+  <h2>Biến thể, giá bán và tồn kho</h2>
+  {{ fs.management_form }}
+  {{ fs.non_form_errors }}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
   {% for f in fs %}
   <fieldset class="cartshop">
     {{ f.id }}{{ f.non_field_errors }}
@@ -38,6 +51,7 @@
     {% if f.instance.pk %}<label class="check">{{ f.DELETE }} Xóa biến thể này</label>{% endif %}
   </fieldset>
   {% endfor %}
+<<<<<<< HEAD
   </div>
   <template id="variant-empty">
   {% with f=fs.empty_form %}<fieldset class="cartshop">
@@ -73,4 +87,9 @@
   });
 })();
 </script>
+=======
+  <p class="shop">Muốn thêm nhiều biến thể: lưu rồi mở lại sản phẩm để có thêm dòng trống.</p>
+  <div class="actions"><button class="btn" type="submit">Lưu sản phẩm</button> <a class="btn btn--ghost" href="{% url 'product_list' %}">Quay lại</a></div>
+</form>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

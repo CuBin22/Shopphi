@@ -1,4 +1,5 @@
 {% extends "catalog/base.html" %}
+<<<<<<< HEAD
 {% load shop_extras %}
 {% block title %}Thông báo - Shopphi{% endblock %}
 {% block content %}
@@ -20,4 +21,10 @@
 {% empty %}<li><div class="empty"><span class="empty__ico">{% icon "bell" %}</span><strong>{% if only_unread %}Không có thông báo chưa đọc.{% else %}Chưa có thông báo.{% endif %}</strong><p>Thông báo về đơn hàng, thanh toán và hoàn tiền sẽ hiện ở đây.</p></div></li>{% endfor %}
 </ul>
 {% include "shopping/_pager.html" %}
+=======
+{% block content %}
+<div class="resulthead"><h1>Thông báo</h1></div>
+{% for n in items %}<p class="msg {% if n.was_unread %}msg--warning{% endif %}">{% if n.link %}<a href="{{ n.link }}">{{ n.content }}</a>{% else %}{{ n.content }}{% endif %} <span class="shop">{{ n.created|date:"d/m H:i" }}</span></p>
+{% empty %}<div class="empty"><p>Chưa có thông báo.</p></div>{% endfor %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

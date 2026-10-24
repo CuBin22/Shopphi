@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block title %}Mã giảm giá - Shopphi{% endblock %}
@@ -18,5 +19,20 @@
   {{ form.non_field_errors }}
   {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
   <button class="btn" type="submit">{% icon "plus" %}Tạo mã</button></form>
+=======
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="resulthead"><h1>Mã giảm giá {% if role == 'QUAN_TRI' %}(toàn sàn và các gian hàng){% else %}của gian hàng{% endif %}</h1></div>
+{% for c in coupons %}
+<p class="row cartshop"><a href="{% url 'coupon_detail' c.pk %}"><strong>{{ c.code }}</strong> - {{ c.label }}{% if c.shop %} - {{ c.shop.name }}{% else %} - Toàn sàn{% endif %}</a>
+<span>Đơn từ {{ c.min_order|vnd }} &middot; {{ c.used_count }}/{{ c.max_uses }} lượt &middot; HSD {{ c.expires|date:"d/m/Y" }}</span></p>
+{% empty %}<div class="empty"><p>Chưa có mã giảm giá.</p></div>{% endfor %}
+{% if can_create %}
+<form method="post" class="formcard"><h2>Tạo mã {% if role == 'QUAN_TRI' %}toàn sàn{% else %}cho gian hàng{% endif %}</h2>{% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for f in form %}<label>{{ f.label }}{{ f }}</label>{{ f.errors }}{% endfor %}
+  <button class="btn" type="submit">Tạo mã</button></form>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% else %}<p class="msg msg--warning">Gian hàng cần ở trạng thái Hoạt động mới tạo được mã giảm giá.</p>{% endif %}
 {% endblock %}

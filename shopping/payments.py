@@ -1,9 +1,14 @@
 """Thanh toán trực tuyến (UC07, FR11, FR22, FR23, NFR02, NFR15).
 
+<<<<<<< HEAD
 Ba cổng, chọn bằng settings.PAYMENT_PROVIDER:
   * "vnpay" (mặc định): VNPay Sandbox (xem vnpay.py). Hệ thống dựng URL thanh toán có ký HMAC-SHA512 rồi chuyển khách sang VNPay;
     kết quả về qua Return URL (khách quay lại) và IPN (VNPay gọi server), cùng đi qua lõi `_apply`. Hoàn tiền chỉ mô phỏng.
   * "zalopay": ZaloPay Sandbox thật (xem zalopay.py). Hệ thống tạo đơn bằng /v2/create rồi chuyển khách sang
+=======
+Hai cổng, chọn bằng settings.PAYMENT_PROVIDER:
+  * "zalopay" (mặc định): ZaloPay Sandbox thật (xem zalopay.py). Hệ thống tạo đơn bằng /v2/create rồi chuyển khách sang
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     trang ZaloPay; kết quả về theo 3 đường: callback của ZaloPay (xác thực key2), truy vấn /v2/query khi khách quay lại,
     và đối soát nền trước khi hết hạn giữ kho. Cả 3 đều đi qua cùng một lõi `_apply` nên mỗi giao dịch chỉ cập nhật đơn một lần.
   * "sandbox": cổng giả lập trong dự án (trang /thanh-toan/sandbox/<mã>/), kết quả ký HMAC-SHA256; dùng khi chạy offline và cho test.
@@ -18,18 +23,28 @@ Quy tắc chung:
 import hashlib
 import hmac
 import json
+<<<<<<< HEAD
 import unicodedata
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 import logging
 import secrets
 from datetime import timedelta
 
 from django.conf import settings
+<<<<<<< HEAD
 from django.core.cache import cache
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.db import IntegrityError, transaction
 from django.urls import reverse
 from django.utils import timezone
 
+<<<<<<< HEAD
 from . import vnpay, zalopay
+=======
+from . import zalopay
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from .models import Order, OrderGroup, PaymentTransaction, RefundRecord
 from .services import OrderError, _log, cancel_order, notify, vnd
 
@@ -103,9 +118,12 @@ def create_payment(user, group_id, now=None) -> PaymentTransaction:
     base = OrderGroup.objects.filter(pk=group_id).first()
     if base is None or base.user_id != user.pk:
         raise PaymentError("Không tìm thấy nhóm đơn của bạn.")
+<<<<<<< HEAD
     # Hỏi ZaloPay về giao dịch còn chờ TRƯỚC khi tạo giao dịch mới: nếu khách đã trả tiền nhưng trang ZaloPay bị treo
     # (không chuyển về được) thì chốt đơn ngay, không để giao dịch cũ bị thay thế rồi thành "Thanh toán muộn".
     reconcile_group(base.pk, now=now)
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     expire_overdue(now, group_id=base.pk)
     with transaction.atomic():
         group = OrderGroup.objects.select_for_update().get(pk=group_id)
@@ -173,7 +191,11 @@ def _apply(first, status, amount, group_id=None, now=None, zp_trans_id=None, pai
             notify(user, f"Giao dịch {txn.ref} đến muộn, số tiền {vnd(txn.amount)} đang chờ hoàn tiền", "/don-hang/")
             return "THANH_TOAN_MUON", txn
 
+<<<<<<< HEAD
         label = {PaymentTransaction.ZALOPAY: "ZaloPay", PaymentTransaction.VNPAY: "VNPay"}.get(txn.provider, "cổng Sandbox")
+=======
+        label = "ZaloPay" if txn.provider == PaymentTransaction.ZALOPAY else "cổng Sandbox"
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         for o in unpaid:
             o.payment_status = Order.PAID
             o.payment_txn = txn
@@ -194,8 +216,11 @@ def process_result(params, now=None):
     first = PaymentTransaction.objects.select_related("group").filter(ref=p["txn_ref"]).first()
     if first is None:
         raise PaymentError("Không tìm thấy giao dịch thanh toán, kết quả bị từ chối.")
+<<<<<<< HEAD
     if first.provider != PaymentTransaction.SANDBOX:
         raise PaymentError("Giao dịch này không thanh toán qua cổng giả lập, kết quả bị từ chối.")
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     try:
         amount = int(p["amount"])
     except ValueError:
@@ -204,6 +229,7 @@ def process_result(params, now=None):
 
 
 # =====================================================================================
+<<<<<<< HEAD
 #                                    VNPAY (SANDBOX)
 # =====================================================================================
 def _client_ip(request) -> str:
@@ -267,12 +293,25 @@ def provider() -> str:
 
 def provider_label() -> str:
     return {"vnpay": "VNPay Sandbox", "zalopay": "ZaloPay Sandbox"}.get(provider(), "Sandbox giả lập")
+=======
+#                                   ZALOPAY (SANDBOX)
+# =====================================================================================
+def provider() -> str:
+    return getattr(settings, "PAYMENT_PROVIDER", "zalopay").lower()
+
+
+def provider_label() -> str:
+    return "ZaloPay Sandbox" if provider() == "zalopay" else "Sandbox giả lập"
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 def start_online_payment(txn: PaymentTransaction, request=None) -> str:
     """Sau create_payment: trả về địa chỉ để chuyển hướng khách (trang ZaloPay hoặc cổng giả lập)."""
+<<<<<<< HEAD
     if provider() == "vnpay":
         return start_vnpay(txn, request)
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     if provider() != "zalopay":
         return reverse("sandbox_gateway", args=[txn.ref])
     redirect_url = getattr(settings, "ZALOPAY_REDIRECT_URL", "")
@@ -281,6 +320,7 @@ def start_online_payment(txn: PaymentTransaction, request=None) -> str:
     return start_zalopay(txn, redirect_url=redirect_url, callback_url=getattr(settings, "ZALOPAY_CALLBACK_URL", ""))
 
 
+<<<<<<< HEAD
 def _ascii(text: str) -> str:
     """Bỏ dấu tiếng Việt: chuỗi item gửi ZaloPay chỉ gồm ASCII để chữ ký luôn khớp."""
     text = text.replace("đ", "d").replace("Đ", "D")
@@ -291,6 +331,12 @@ def _zalopay_items(txn):
     items = []
     for o in payable_orders(txn.group):
         items.append({"itemid": str(o.pk), "itemname": _ascii(f"Don hang #{o.pk} - {o.shop.name}")[:100],
+=======
+def _zalopay_items(txn):
+    items = []
+    for o in payable_orders(txn.group):
+        items.append({"itemid": str(o.pk), "itemname": f"Don hang #{o.pk} - {o.shop.name}"[:100],
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
                       "itemprice": int(o.total), "itemquantity": 1})
     return items
 
@@ -385,11 +431,16 @@ def sync_zalopay(txn: PaymentTransaction, now=None):
     return _apply(txn, "FAILED", int(txn.amount), now=now)
 
 
+<<<<<<< HEAD
 def reconcile_group(group_id, now=None, throttle=0):
     """Đối soát các giao dịch ZaloPay còn chờ của một nhóm đơn (dùng trước khi hủy vì hết hạn giữ kho).
     throttle > 0: bỏ qua nếu nhóm đơn này vừa được hỏi ZaloPay trong `throttle` giây (cho các trang tải/poll liên tục)."""
     if throttle and not cache.add(f"zp-recon:{group_id}", 1, throttle):
         return
+=======
+def reconcile_group(group_id, now=None):
+    """Đối soát các giao dịch ZaloPay còn chờ của một nhóm đơn (dùng trước khi hủy vì hết hạn giữ kho)."""
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     for txn in PaymentTransaction.objects.select_related("group").filter(
             group_id=group_id, status=PaymentTransaction.PENDING, provider=PaymentTransaction.ZALOPAY,
             app_trans_id__isnull=False):
@@ -399,6 +450,7 @@ def reconcile_group(group_id, now=None, throttle=0):
             logger.warning("Chưa đối soát được giao dịch %s: %s", txn.ref, e)
 
 
+<<<<<<< HEAD
 def reconcile_user(user, now=None, min_age_seconds=3):
     """Hỏi ZaloPay về các giao dịch còn chờ của một khách (gọi khi khách mở trang đơn hàng). Phòng trường hợp ZaloPay
     không chuyển khách về website sau khi thanh toán. Không bao giờ ném lỗi ra ngoài."""
@@ -414,6 +466,8 @@ def reconcile_user(user, now=None, min_age_seconds=3):
         logger.exception("Không đối soát được giao dịch ZaloPay của user %s", getattr(user, "pk", None))
 
 
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 def reconcile_pending(now=None, min_age_seconds=60) -> int:
     """Tác vụ nền: đối soát mọi giao dịch ZaloPay còn chờ đã tạo hơn `min_age_seconds` (phòng callback bị lỡ). Trả về số giao dịch đã chốt."""
     now = now or timezone.now()

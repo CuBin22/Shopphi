@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block title %}Sản phẩm - Shopphi{% endblock %}
@@ -37,4 +38,28 @@
 </table></div>
 {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>Không có sản phẩm nào khớp.</p></div>{% endif %}
 {% include "shopping/_pager.html" %}
+=======
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="resulthead"><h1>Sản phẩm - {{ shop.name }}</h1></div>
+{% if shop.status != 'HOAT_DONG' %}<p class="msg msg--warning">Gian hàng chưa ở trạng thái Hoạt động nên chưa đăng bán được sản phẩm.</p>
+{% else %}<p><a class="btn" href="{% url 'product_add' %}">+ Thêm sản phẩm</a></p>{% endif %}
+<form method="get" class="inline"><input name="q" value="{{ q }}" placeholder="Tìm theo tên, thương hiệu, thẻ"> <button class="btn btn--small" type="submit">Tìm</button></form>
+<nav class="cats"><a href="{% url 'product_list' %}" {% if not status %}aria-current="page"{% endif %}>Tất cả</a>
+{% for k, l in statuses %}<a href="?trang_thai={{ k }}" {% if status == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
+{% for p in products %}
+<div class="cartshop">
+  <p class="row"><a href="{% url 'product_edit' p.pk %}"><strong>{{ p.name }}</strong></a>
+    <span><span class="pill">{{ p.get_status_display }}</span> {{ p.category.name }}</span></p>
+  <p class="row"><span>Giá từ {{ p.min_price|vnd }} &middot; Tồn {{ p.total_stock|default:0 }}{% if not p.total_stock %} <span class="pill pill--warn">Hết hàng</span>{% endif %}</span>
+    <span class="actions">
+      <a class="btn btn--small btn--ghost" href="{% url 'product_edit' p.pk %}">Sửa</a>
+      {% if p.status != 'BI_GO' %}<form method="post" action="{% url 'product_toggle' p.pk %}" class="inline">{% csrf_token %}<button class="btn btn--small btn--ghost" type="submit">{% if p.status == 'HIEN_THI' %}Ẩn{% else %}Hiển thị{% endif %}</button></form>{% endif %}
+      <form method="post" action="{% url 'product_delete' p.pk %}" class="inline" onsubmit="return confirm('Xóa sản phẩm này? Nếu đã có đơn hàng thì sản phẩm chỉ bị ẩn.')">{% csrf_token %}<button class="btn btn--small btn--ghost" type="submit">Xóa</button></form>
+    </span></p>
+  {% if p.status == 'BI_GO' %}<p class="warn">Bị Quản trị viên gỡ. Lý do: {{ p.removal_reason }}</p>{% endif %}
+</div>
+{% empty %}<div class="empty"><p>Chưa có sản phẩm.</p></div>{% endfor %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

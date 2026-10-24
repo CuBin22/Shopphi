@@ -9,6 +9,7 @@ from .utils import normalize_identifier
 User = get_user_model()
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PHONE_RE = re.compile(r"^0\d{9,10}$")
+<<<<<<< HEAD
 GMAIL_DOMAINS = ("gmail.com", "googlemail.com")
 
 
@@ -21,13 +22,19 @@ def validate_new_password(pw):
     if len(pw or "") < 8 or not re.search(r"[A-Za-z]", pw) or not re.search(r"\d", pw):
         raise forms.ValidationError("Mật khẩu tối thiểu 8 ký tự, gồm cả chữ và số.")
     return pw
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 class RegisterForm(forms.Form):
     """BM1 - Đăng ký tài khoản."""
     full_name = forms.CharField(label="Họ tên", max_length=80)
+<<<<<<< HEAD
     identifier = forms.CharField(label="Gmail", max_length=150, widget=forms.EmailInput(
         attrs={"placeholder": "ten@gmail.com", "autocomplete": "email"}))
+=======
+    identifier = forms.CharField(label="Email hoặc số điện thoại", max_length=150)
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     role = forms.ChoiceField(label="Loại tài khoản", choices=[(Profile.CUSTOMER, "Khách hàng"), (Profile.VENDOR, "Người bán")],
                              initial=Profile.CUSTOMER, widget=forms.RadioSelect)
     password = forms.CharField(label="Mật khẩu", widget=forms.PasswordInput, strip=False)
@@ -38,6 +45,7 @@ class RegisterForm(forms.Form):
 
     def clean_identifier(self):
         ident = normalize_identifier(self.cleaned_data["identifier"])
+<<<<<<< HEAD
         if not is_gmail(ident):
             raise forms.ValidationError("Vui lòng nhập địa chỉ Gmail hợp lệ (dạng ten@gmail.com).")
         if User.objects.filter(username=ident).exists() or User.objects.filter(email__iexact=ident).exists():
@@ -46,6 +54,19 @@ class RegisterForm(forms.Form):
 
     def clean_password(self):
         return validate_new_password(self.cleaned_data["password"])
+=======
+        if not (EMAIL_RE.match(ident) or PHONE_RE.match(ident)):
+            raise forms.ValidationError("Nhập email hợp lệ hoặc số điện thoại 10-11 chữ số.")
+        if User.objects.filter(username=ident).exists():
+            raise forms.ValidationError("Email hoặc số điện thoại này đã có tài khoản. Hãy đăng nhập.")
+        return ident
+
+    def clean_password(self):
+        pw = self.cleaned_data["password"]
+        if len(pw) < 8 or not re.search(r"[A-Za-z]", pw) or not re.search(r"\d", pw):
+            raise forms.ValidationError("Mật khẩu tối thiểu 8 ký tự, gồm cả chữ và số.")
+        return pw
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
     def clean(self):
         data = super().clean()
@@ -54,15 +75,19 @@ class RegisterForm(forms.Form):
         return data
 
 
+<<<<<<< HEAD
 class VerifySignupForm(forms.Form):
     """Bước 2 của đăng ký - nhập mã OTP gửi qua Gmail."""
     otp = forms.CharField(label="Mã OTP (6 chữ số)", max_length=10)
 
 
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 class LoginForm(forms.Form):
     """BM2 - Đăng nhập."""
     identifier = forms.CharField(label="Email hoặc số điện thoại", max_length=150)
     password = forms.CharField(label="Mật khẩu", widget=forms.PasswordInput, strip=False)
+<<<<<<< HEAD
 
 
 class ForgotForm(forms.Form):
@@ -152,3 +177,5 @@ class ChangePasswordForm(forms.Form):
         if data.get("password") and data.get("old_password") and data["password"] == data["old_password"]:
             self.add_error("password", "Mật khẩu mới phải khác mật khẩu hiện tại.")
         return data
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block title %}Thống kê và báo cáo - Shopphi{% endblock %}
@@ -37,4 +38,26 @@
   </section>
   {% endif %}
 </div>
+=======
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block content %}
+<div class="resulthead"><h1>Thống kê và báo cáo</h1></div>
+<form method="get" class="filters">
+  <label>Từ ngày<input type="date" name="tu_ngay" value="{{ d_from }}" max="{{ today }}"></label>
+  <label>Đến ngày<input type="date" name="den_ngay" value="{{ d_to }}" max="{{ today }}"></label>
+  {% if role == 'QUAN_TRI' %}<label>Gian hàng<select name="gian_hang"><option value="">Toàn sàn</option>{% for s in all_shops %}<option value="{{ s.pk }}" {% if shop_filter == s.pk|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>{% endif %}
+  <button type="submit">Xem</button>
+</form>
+{% if error %}<p class="msg msg--error">{{ error }}</p>{% else %}
+<table class="tbl"><thead><tr><th>Gian hàng</th><th>Đơn hoàn thành</th><th>Doanh thu</th><th>Hủy thủ công</th><th>Hủy tự động</th><th>Tồn kho hiện tại</th></tr></thead><tbody>
+{% for r in rows %}<tr><td>{{ r.shop.name }}</td><td>{{ r.done }}</td><td>{{ r.revenue|vnd }}</td><td>{{ r.cancel_manual }}</td><td>{{ r.cancel_auto }}</td><td>{{ r.stock }}</td></tr>
+{% empty %}<tr><td colspan="6">Không có dữ liệu.</td></tr>{% endfor %}
+{% if rows|length > 1 %}<tr class="total"><td>Tổng</td><td>{{ totals.done }}</td><td>{{ totals.revenue|vnd }}</td><td>{{ totals.cancel_manual }}</td><td>{{ totals.cancel_auto }}</td><td>{{ totals.stock }}</td></tr>{% endif %}
+</tbody></table>
+<p class="shop">Doanh thu = tạm tính trừ giảm giá của đơn Hoàn thành trong kỳ, không gồm phí vận chuyển. Tồn kho là số liệu tại thời điểm xem.</p>
+{% endif %}
+{% if keywords %}<section class="block"><div class="block__head"><h2>Từ khóa tìm kiếm phổ biến (tổng hợp ẩn danh)</h2></div>
+<table class="tbl"><thead><tr><th>Từ khóa</th><th>Lượt tìm</th><th>Sản phẩm khớp</th></tr></thead><tbody>{% for k in keywords %}<tr><td>{{ k.phrase }}</td><td>{{ k.frequency }}</td><td>{{ k.match_count }}</td></tr>{% endfor %}</tbody></table></section>{% endif %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

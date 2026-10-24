@@ -48,6 +48,7 @@ class Base(TestCase):
 
 class AccountTests(TestCase):
     def test_register_login_lockout_and_session_merge(self):
+<<<<<<< HEAD
         import re
         from django.core import mail
         c = Client()
@@ -69,6 +70,25 @@ class AccountTests(TestCase):
         r = c.post(reverse("login"), {"identifier": "an@gmail.com", "password": "abc12345"})
         self.assertContains(r, "tạm khóa")                # đúng mật khẩu vẫn bị khóa
         p = Profile.objects.get(user__username="an@gmail.com")
+=======
+        c = Client()
+        r = c.post(reverse("register"), {"full_name": "An", "identifier": "an@x.vn", "role": "KHACH_HANG", "password": "abc12345",
+                                         "password2": "abc12345", "agree": "on"})
+        self.assertRedirects(r, reverse("login"))
+        self.assertTrue(User.objects.filter(username="an@x.vn").exists())
+        r = c.post(reverse("register"), {"full_name": "An", "identifier": "AN@x.vn", "role": "KHACH_HANG", "password": "abc12345",
+                                         "password2": "abc12345", "agree": "on"})
+        self.assertContains(r, "đã có tài khoản")
+        r = c.post(reverse("register"), {"full_name": "B", "identifier": "b@x.vn", "role": "KHACH_HANG", "password": "abcdefgh",
+                                         "password2": "abcdefgh", "agree": "on"})
+        self.assertContains(r, "gồm cả chữ và số")
+        for _ in range(5):
+            r = c.post(reverse("login"), {"identifier": "an@x.vn", "password": "sai"})
+        self.assertContains(r, "tạm khóa")
+        r = c.post(reverse("login"), {"identifier": "an@x.vn", "password": "abc12345"})
+        self.assertContains(r, "tạm khóa")                # đúng mật khẩu vẫn bị khóa
+        p = Profile.objects.get(user__username="an@x.vn")
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         p.locked_until = timezone.now() - timedelta(minutes=1)
         p.save()
         # hành vi ẩn danh được gắn vào tài khoản sau khi đăng nhập
@@ -76,9 +96,15 @@ class AccountTests(TestCase):
         c2.get("/")
         from catalog.models import BehaviorLog
         BehaviorLog.objects.create(session_key=c2.session.session_key, type="VIEW")
+<<<<<<< HEAD
         r = c2.post(reverse("login"), {"identifier": "an@gmail.com", "password": "abc12345"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(BehaviorLog.objects.filter(user__username="an@gmail.com").count(), 1)
+=======
+        r = c2.post(reverse("login"), {"identifier": "an@x.vn", "password": "abc12345"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(BehaviorLog.objects.filter(user__username="an@x.vn").count(), 1)
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
     def test_anonymous_cart_merges_on_login(self):
         cat = Category.objects.create(slug="c", name="c")

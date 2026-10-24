@@ -2,6 +2,7 @@
 {% load shop_extras %}
 {% block title %}Đặt hàng - Shopphi{% endblock %}
 {% block content %}
+<<<<<<< HEAD
 <div class="co-head">
   <h1>{% icon "credit-card" %}Đặt hàng</h1>
   <ol class="co-steps" aria-label="Các bước mua hàng">
@@ -113,5 +114,40 @@
       </ul>
     </div>
   </aside>
+=======
+<div class="resulthead"><h1>Đặt hàng</h1><p>Giỏ hàng nhiều gian hàng sẽ được tách thành nhiều đơn.</p></div>
+<form method="post" class="checkout">
+  {% csrf_token %}
+  <section class="formcard">
+    <h2>Thông tin nhận hàng</h2>
+    <label>Tên người nhận<input name="name" value="{{ info.name }}" required></label>
+    <label>Số điện thoại<input name="phone" value="{{ info.phone }}" required></label>
+    <label>Địa chỉ nhận hàng<input name="address" value="{{ info.address }}" required></label>
+    <fieldset><legend>Phương thức thanh toán</legend>
+      <label class="check"><input type="radio" name="payment_method" value="COD" {% if method == 'COD' %}checked{% endif %}> Thanh toán khi nhận hàng (COD)</label>
+      <label class="check"><input type="radio" name="payment_method" value="CONG_THANH_TOAN" {% if method == 'CONG_THANH_TOAN' %}checked{% endif %}> Thanh toán trực tuyến (<strong>{{ provider_label }}</strong> - thử nghiệm, không trừ tiền thật; kho được giữ {{ hold_minutes }} phút)</label>
+    </fieldset>
+    <label>Mã giảm giá toàn sàn (tối đa một mã)<input name="global_code" value="{{ global_code }}" placeholder="Ví dụ CHAOSHOPPHI"></label>
+    {% if global_error %}<p class="warn">{{ global_error }}</p>{% elif co.global_coupon %}<p class="okmsg">Đã áp mã {{ co.global_coupon.code }}: giảm {{ co.global_discount|vnd }}</p>{% endif %}
+  </section>
+  {% for p in co.parts %}
+  <section class="cartshop">
+    <h2>{{ p.shop.name }} <span class="shop">(một đơn riêng)</span></h2>
+    {% for r in p.rows %}<p class="row"><span>{{ r.v.product.name }} - {{ r.v.name }} &times; {{ r.qty }}</span><strong>{{ r.total|vnd }}</strong></p>{% endfor %}
+    <label>Mã giảm giá của gian hàng<input name="coupon_{{ p.shop.pk }}" value="{{ p.code }}"></label>
+    {% if p.error %}<p class="warn">{{ p.error }}</p>{% elif p.coupon %}<p class="okmsg">Đã áp mã {{ p.coupon.code }}: giảm {{ p.shop_discount|vnd }}</p>{% endif %}
+    <p class="row"><span>Tạm tính</span><span>{{ p.subtotal|vnd }}</span></p>
+    <p class="row"><span>Giảm giá</span><span>- {{ p.discount|vnd }}</span></p>
+    <p class="row"><span>Phí vận chuyển</span><span>{{ p.shipping|vnd }}</span></p>
+    <p class="row"><strong>Tổng đơn</strong><strong>{{ p.total|vnd }}</strong></p>
+  </section>
+  {% endfor %}
+  <section class="summary">
+    <p>Tạm tính {{ co.subtotal|vnd }} &minus; giảm {{ co.discount|vnd }} + vận chuyển {{ co.shipping|vnd }}</p>
+    <p class="summary__total">Tổng thanh toán: <strong>{{ co.total|vnd }}</strong></p>
+    <div class="actions"><button class="btn btn--ghost" name="action" value="apply" type="submit">Áp dụng mã</button>
+    <button class="btn" name="action" value="place" type="submit">Đặt hàng</button></div>
+  </section>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 </form>
 {% endblock %}

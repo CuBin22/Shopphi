@@ -1,4 +1,5 @@
 {% extends "catalog/base.html" %}
+<<<<<<< HEAD
 {% load static shop_extras %}
 {% block bodyclass %}is-home{% endblock %}
 {% block hero %}
@@ -69,6 +70,28 @@
 <section class="block" aria-labelledby="h-goiy">
   <div class="block__head">
     <h2 id="h-goiy">GỢI Ý HÔM NAY</h2>
+=======
+{% block bodyclass %}is-home{% endblock %}
+{% block headersearch %}<div class="top__spacer"></div>{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Tìm món bạn cần trong vài chữ cái</h1>
+  <p class="hero__sub">Đồ công nghệ, đồ gia dụng và đồ chơi từ nhiều gian hàng, gõ không dấu cũng tìm được.</p>
+  {% include "catalog/_search_form.html" with variant="hero" %}
+  {% if trending %}
+  <div class="trend">
+    <span>Đang được tìm nhiều</span>
+    <ul>
+      {% for t in trending %}<li><a href="{% url 'search' %}?q={{ t|urlencode }}&amp;goi_y=1">{{ t }}</a></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</section>
+
+<section class="block" aria-labelledby="h-goiy">
+  <div class="block__head">
+    <h2 id="h-goiy">Gợi ý cho bạn</h2>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     <p>{% if personal %}Dựa trên sản phẩm bạn đã xem và thêm vào giỏ{% else %}Sản phẩm được quan tâm nhiều trên sàn. Xem thêm vài sản phẩm để gợi ý khớp với bạn hơn.{% endif %}</p>
   </div>
   {% if recommended %}
@@ -76,6 +99,7 @@
     {% for p in recommended %}{% include "catalog/_card.html" with nguon="goi-y" %}{% endfor %}
   </div>
   {% else %}
+<<<<<<< HEAD
   <div class="empty"><span class="empty__ico">{% icon "sparkles" %}</span><p>Chưa có sản phẩm nào để gợi ý. Hãy quay lại khi các gian hàng cập nhật sản phẩm.</p></div>
   {% endif %}
 </section>
@@ -95,3 +119,21 @@
 {% endblock %}
 
 {% block scripts %}<script src="{% static 'catalog/js/carousel.js' %}" defer></script>{% endblock %}
+=======
+  <p class="empty">Chưa có sản phẩm nào để gợi ý. Chạy lệnh <code>python manage.py seed_demo --reset</code> để nạp dữ liệu mẫu.</p>
+  {% endif %}
+</section>
+
+<section class="block" aria-labelledby="h-dm">
+  <div class="block__head"><h2 id="h-dm">Mua theo danh mục</h2></div>
+  <div class="catgrid">
+    {% for c in nav_categories %}
+    <a class="catbox tile--{{ c.slug }}" href="{% url 'search' %}?danh_muc={{ c.slug }}">
+      <span class="catbox__ico">{% include "catalog/_glyph.html" with slug=c.slug %}</span>
+      <span class="catbox__name">{{ c.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

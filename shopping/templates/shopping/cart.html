@@ -2,6 +2,7 @@
 {% load shop_extras %}
 {% block title %}Giỏ hàng - Shopphi{% endblock %}
 {% block content %}
+<<<<<<< HEAD
 <div class="resulthead"><h1>{% icon "cart" %}Giỏ hàng</h1></div>
 {% if shops %}
   {% for s in shops %}
@@ -13,6 +14,19 @@
       <div class="line__main">
         <a href="{{ l.v.product.get_absolute_url }}">{{ l.v.product.name }}</a>
         <p class="shop">{{ l.v.name }}, tồn khả dụng {{ l.v.stock }}</p>
+=======
+<div class="resulthead"><h1>Giỏ hàng</h1></div>
+{% if shops %}
+  {% for s in shops %}
+  <section class="cartshop">
+    <h2>{{ s.shop.name }}</h2>
+    {% for l in s.lines %}
+    <div class="line">
+      <div class="tile tile--{{ l.v.product.category.slug }} tone-{{ l.v.product.pk|tone }} tile--thumb">{% if l.v.product.image %}<img class="tile__image" src="{{ l.v.product.image.url }}" alt="{{ l.v.product.name }}" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=l.v.product.category.slug %}{% endif %}</div>
+      <div class="line__main">
+        <a href="{{ l.v.product.get_absolute_url }}">{{ l.v.product.name }}</a>
+        <p class="shop">{{ l.v.name }} &middot; Tồn khả dụng: {{ l.v.stock }}</p>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         {% if l.over %}<p class="warn">Số lượng vượt tồn kho, tối đa {{ l.v.stock }}.</p>{% endif %}
       </div>
       <form method="post" action="{% url 'cart_update' %}" class="line__qty">{% csrf_token %}
@@ -22,7 +36,11 @@
         <button class="btn btn--small btn--ghost" type="submit">Cập nhật</button>
       </form>
       <p class="price">{{ l.total|vnd }}</p>
+<<<<<<< HEAD
       <form method="post" action="{% url 'cart_remove' %}">{% csrf_token %}<input type="hidden" name="variant" value="{{ l.v.pk }}"><button class="linkbtn" type="submit" aria-label="Xóa {{ l.v.product.name }} khỏi giỏ">{% icon "trash" %}Xóa</button></form>
+=======
+      <form method="post" action="{% url 'cart_remove' %}">{% csrf_token %}<input type="hidden" name="variant" value="{{ l.v.pk }}"><button class="linkbtn" type="submit">Xóa</button></form>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     </div>
     {% endfor %}
     <p class="subtotal">Tạm tính của gian hàng: <strong>{{ s.subtotal|vnd }}</strong></p>
@@ -31,12 +49,19 @@
   <section class="summary">
     <p>Giảm giá và phí vận chuyển tính ở bước đặt hàng.</p>
     <p class="summary__total">Tạm tính: <strong>{{ grand|vnd }}</strong></p>
+<<<<<<< HEAD
     <div class="actions"><a class="btn btn--ghost" href="{% url 'home' %}">Tiếp tục mua sắm</a>
     {% if has_over %}<span class="btn btn--lg" aria-disabled="true" style="opacity:.45;cursor:not-allowed">Đặt hàng</span>{% else %}<a class="btn btn--lg" href="{% url 'checkout' %}">Đặt hàng</a>{% endif %}</div>
     {% if has_over %}<p class="warn" style="color:#ffd9d4">Có sản phẩm vượt tồn kho, hãy giảm số lượng trước khi đặt hàng.</p>{% endif %}
   </section>
 {% else %}
   <div class="empty"><span class="empty__ico">{% icon "cart" %}</span><strong>Giỏ hàng đang trống.</strong><p>Chọn vài sản phẩm để bắt đầu.</p>
+=======
+    <a class="btn" href="{% url 'checkout' %}">Đặt hàng</a>
+  </section>
+{% else %}
+  <div class="empty"><p><strong>Giỏ hàng đang trống.</strong></p><p>Chọn vài sản phẩm để bắt đầu.</p>
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
   <p><a class="btn" href="{% url 'home' %}">Xem sản phẩm gợi ý</a></p></div>
 {% endif %}
 {% endblock %}

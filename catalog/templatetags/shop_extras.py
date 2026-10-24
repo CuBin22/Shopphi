@@ -1,6 +1,9 @@
 from django import template
+<<<<<<< HEAD
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 register = template.Library()
 
@@ -38,6 +41,7 @@ def stars(n):
     except (TypeError, ValueError):
         n = 0
     return "★" * n + "☆" * (5 - n)
+<<<<<<< HEAD
 
 
 @register.simple_tag
@@ -122,3 +126,5 @@ def actor_name(user):
     if user is None:
         return "Hệ thống"
     return user.first_name or user.get_username()
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

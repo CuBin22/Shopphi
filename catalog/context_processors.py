@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from .models import Category, Shop
+=======
+from .models import Category
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 def giao_dien(request):
@@ -14,6 +18,7 @@ def giao_dien(request):
     if user.is_authenticated:
         ctx["role"] = get_role(user)
         ctx["unread_count"] = Notification.objects.filter(user=user, read=False).count()
+<<<<<<< HEAD
         if ctx["role"] in ("NGUOI_BAN", "QUAN_TRI") and request.path.startswith("/quan-ly/"):
             ctx["side_badges"] = _side_badges(user, ctx["role"])
             if ctx["role"] == "NGUOI_BAN":
@@ -38,3 +43,6 @@ def _side_badges(user, role):
         }
     except Exception:  # noqa: BLE001  - số nhắc việc không được làm hỏng trang
         return {}
+=======
+    return ctx
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

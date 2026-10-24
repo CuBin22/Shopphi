@@ -1,0 +1,98 @@
+/* Shopphi: header lớn hơn, ô tìm kiếm gọn hơn, footer chuyên nghiệp. Nạp sau storefront.css. */
+:root { --header-h: 176px; }
+
+/* ---------- Header ---------- */
+.top__utility { font-size: 14px; padding-top: 10px; }
+.top__utility > div { gap: 16px; }
+.top__utility .i { width: 16px; height: 16px; }
+.top__row { gap: 36px; padding-block: 18px 14px; }
+.top .brand { font-size: 42px; gap: 10px; }
+.top .brand__mark { width: 52px; height: 52px; }
+.top .brand__mark .i { width: 46px; height: 46px; }
+.top .search { flex: 1 1 auto; max-width: 540px; border-width: 2px; }
+.top .search input[type="search"] { font-size: 15px; padding-block: 10px; }
+.top .search button { padding: 0 20px; }
+.top .search button .i { width: 20px; height: 20px; }
+.top__links { gap: 10px; }
+.top .iconlink { width: 54px; height: 54px; border-radius: 12px; color: #fff; }
+.top .iconlink .i { width: 30px; height: 30px; }
+.top .iconlink:hover { background: #d84225; color: #fff; }
+.top .count { min-width: 22px; height: 22px; font-size: 13px; top: 3px; right: 1px; }
+.top .headlink { font-size: 16px; padding: 12px 16px; gap: 10px; color: #fff; }
+.top .headlink .i { width: 24px; height: 24px; }
+.top__links > .btn { font-size: 16px; padding: 12px 24px; border-radius: 6px; background: #fff; color: #d63c1d; border-color: #fff; }
+.top__links > .btn:hover { background: #fff0eb; border-color: #fff0eb; }
+.top .avatar { width: 42px; height: 42px; font-size: 19px; }
+.top .usermenu summary { padding: 5px 12px 5px 5px; }
+.top .usermenu__name { font-size: 16px; max-width: 150px; }
+.top .usermenu__panel { min-width: 260px; }
+.top .usermenu__panel a, .top .usermenu__panel button { font-size: 16px; padding: 11px 14px; }
+.top .cats { padding-bottom: 8px; gap: 6px; }
+.top .cats a { font-size: 16px; padding: 8px 18px; gap: 10px; }
+.top .cats a .i { width: 22px; height: 22px; }
+
+/* ---------- Footer ---------- */
+.sitefoot { margin-top: 72px; background: #262626; color: #cfcfcf; font-size: 15px; border-top: 4px solid #ee4d2d; }
+.is-manage .sitefoot { margin-top: 40px; }
+.sitefoot a { color: inherit; text-decoration: none; }
+.sitefoot a:hover { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.sitefoot :focus-visible { outline-color: #fff; }
+.sitefoot__grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.2fr; gap: 48px; padding-block: 52px 40px; }
+.sitefoot__logo { display: inline-flex; align-items: center; gap: 12px; color: #fff; font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+.sitefoot__logo:hover { text-decoration: none !important; }
+.sitefoot__mark { width: 46px; height: 46px; border-radius: 12px; background: #ee4d2d; display: grid; place-items: center; }
+.sitefoot__mark .i { width: 28px; height: 28px; color: #fff; stroke-width: 1.8; }
+.sitefoot__about { margin-top: 16px; max-width: 38ch; line-height: 1.7; color: #b5b5b5; }
+.sitefoot__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.sitefoot__tags span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid #444; border-radius: 999px; font-size: 13px; color: #d5d5d5; }
+.sitefoot__tags .i { width: 15px; height: 15px; color: #ee4d2d; }
+.sitefoot h2 { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 18px; }
+.sitefoot ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.sitefoot li a { display: inline-flex; align-items: center; gap: 8px; }
+.sitefoot li .i { width: 16px; height: 16px; color: #ee4d2d; }
+.sitefoot__author { display: grid; gap: 14px; }
+.sitefoot__card { display: flex; align-items: center; gap: 14px; padding: 16px; background: #313131; border: 1px solid #444; border-radius: 10px; }
+.sitefoot__avatar { width: 48px; height: 48px; flex: none; border-radius: 50%; background: #ee4d2d; color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 20px; }
+.sitefoot__card strong { display: block; color: #fff; font-size: 17px; line-height: 1.3; }
+.sitefoot__card span { font-size: 13px; color: #a8a8a8; }
+.sitefoot__school { line-height: 1.6; color: #a8a8a8; font-size: 14px; }
+.sitefoot__bar { border-top: 1px solid #3d3d3d; background: #1f1f1f; }
+.sitefoot__bar .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 24px; padding-block: 20px; font-size: 14px; color: #9a9a9a; }
+.sitefoot__copy { display: inline-flex; align-items: center; gap: 10px; }
+.sitefoot__copy .sitefoot__mark { width: 28px; height: 28px; border-radius: 7px; }
+.sitefoot__copy .sitefoot__mark .i { width: 17px; height: 17px; }
+.sitefoot__copy b { color: #fff; font-weight: 700; }
+.sitefoot__sandbox { display: inline-flex; align-items: center; gap: 8px; }
+.sitefoot__sandbox .i { width: 16px; height: 16px; color: #ee4d2d; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .top__row { gap: 20px; }
+  .top .brand { font-size: 36px; }
+  .top .search { max-width: 420px; }
+  .top .headlink .i { display: none; }
+  .sitefoot__grid { grid-template-columns: 1fr 1fr; gap: 36px; }
+}
+@media (max-width: 900px) { :root { --header-h: 210px; } }
+@media (max-width: 760px) {
+  :root { --header-h: 230px; }
+  .top__utility { font-size: 13px; }
+  .top__row { gap: 12px; padding-block: 14px 10px; }
+  .top .brand { font-size: 32px; }
+  .top .brand__mark, .top .brand__mark .i { width: 38px; height: 38px; }
+  .top .search { order: 3; flex: 0 0 100%; max-width: none; }
+  .top .iconlink { width: 48px; height: 48px; }
+  .top .iconlink .i { width: 26px; height: 26px; }
+  .top .headlink { padding: 10px 10px; font-size: 15px; }
+  .top .headlink span { display: inline; }
+  .top__links > .btn { padding: 10px 16px; font-size: 15px; }
+  .top .cats a { font-size: 15px; padding-inline: 12px; }
+  .sitefoot__grid { grid-template-columns: 1fr; gap: 30px; padding-block: 38px 28px; }
+  .sitefoot__bar .wrap { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 400px) {
+  .top .brand { font-size: 27px; }
+  .top .headlink, .top__links > .btn { font-size: 14px; }
+  .top__utility > div { gap: 8px; }
+}
+@media (max-width: 760px) { .is-product .sitefoot { margin-bottom: 0; } }

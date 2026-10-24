@@ -1,9 +1,15 @@
 """Thống kê và báo cáo (UC19). Doanh thu = tổng (tạm tính - giảm giá) của đơn Hoàn thành, không gồm phí vận chuyển."""
+<<<<<<< HEAD
 import math
 from datetime import date, timedelta
 
 from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
+=======
+from datetime import date
+
+from django.db.models import Count, Q, Sum
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.utils import timezone
 
 from catalog.models import Keyword, Shop, Variant
@@ -47,6 +53,7 @@ def stats(d_from: date, d_to: date, shops):
 def popular_keywords(limit=10):
     """Số liệu tổng hợp ẩn danh (chỉ Quản trị viên xem)."""
     return list(Keyword.objects.filter(frequency__gt=0).order_by("-frequency")[:limit])
+<<<<<<< HEAD
 
 
 def daily_revenue(d_from: date, d_to: date, shop=None):
@@ -91,3 +98,5 @@ def chart_data(series, max_columns=45):
         p["h"] = round(p["revenue"] * 100 / top, 2) if top else 0
     return {"points": points, "top": top, "mid": top // 2, "bucket_days": size,
             "total": sum(p["revenue"] for p in points), "done": sum(p["done"] for p in points)}
+=======
+>>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

@@ -8,6 +8,7 @@
   <title>{% block title %}Shopphi - Sàn đa gian hàng{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'catalog/css/app.css' %}">
   <link rel="stylesheet" href="{% static 'catalog/css/storefront.css' %}">
+  <link rel="stylesheet" href="{% static 'catalog/css/header-footer.css' %}">
 </head>
 <body class="{% block bodyclass %}{% endblock %}">
 {% include "catalog/_icons.html" %}
@@ -79,8 +80,60 @@
   {% block content %}{% endblock %}
 </main>
 
-<footer class="foot">
-  <div class="wrap">{% icon "store" %}<span>Shopphi - sàn thương mại điện tử đa gian hàng: đồ công nghệ, đồ gia dụng, đồ chơi.</span></div>
+<footer class="sitefoot">
+  <div class="wrap sitefoot__grid">
+    <section aria-label="Giới thiệu Shopphi">
+      <a class="sitefoot__logo" href="{% url 'home' %}" aria-label="Shopphi, về trang chủ">
+        <span class="sitefoot__mark" aria-hidden="true">{% icon "store" %}</span>Shopphi
+      </a>
+      <p class="sitefoot__about">Sàn thương mại điện tử đa gian hàng: đồ công nghệ, đồ gia dụng, đồ chơi. Gợi ý sản phẩm theo hành vi, gợi ý từ khóa khi tìm kiếm và chatbot tư vấn.</p>
+      <div class="sitefoot__tags">
+        <span>{% icon "shield" %}Không lưu thông tin thẻ</span>
+        <span>{% icon "package" %}Tách đơn theo gian hàng</span>
+      </div>
+    </section>
+
+    <nav aria-label="Mua sắm">
+      <h2>Mua sắm</h2>
+      <ul>
+        <li><a href="{% url 'search' %}">{% icon "grid" %}Tất cả sản phẩm</a></li>
+        {% for c in nav_categories %}<li><a href="{% url 'search' %}?danh_muc={{ c.slug }}">{% include "catalog/_glyph.html" with slug=c.slug %}{{ c.name }}</a></li>{% endfor %}
+        <li><a href="{% url 'cart' %}">{% icon "cart" %}Giỏ hàng</a></li>
+      </ul>
+    </nav>
+
+    <nav aria-label="Tài khoản và bán hàng">
+      <h2>Tài khoản</h2>
+      <ul>
+        {% if user.is_authenticated %}
+        <li><a href="{% url 'profile' %}">{% icon "user" %}Tài khoản của tôi</a></li>
+        {% if role == 'KHACH_HANG' %}<li><a href="{% url 'my_orders' %}">{% icon "package" %}Đơn hàng của tôi</a></li>{% endif %}
+        <li><a href="{% url 'notifications' %}">{% icon "bell" %}Thông báo</a></li>
+        {% else %}
+        <li><a href="{% url 'login' %}">{% icon "log-in" %}Đăng nhập</a></li>
+        <li><a href="{% url 'register' %}">{% icon "user" %}Đăng ký</a></li>
+        {% endif %}
+        <li><a href="{% url 'shop_register' %}">{% icon "store" %}Mở gian hàng</a></li>
+        <li><a href="{% url 'manage_home' %}">{% icon "dashboard" %}Kênh người bán</a></li>
+      </ul>
+    </nav>
+
+    <section class="sitefoot__author" aria-label="Thông tin tác giả">
+      <h2>Thực hiện bởi</h2>
+      <div class="sitefoot__card">
+        <span class="sitefoot__avatar" aria-hidden="true">P</span>
+        <div><strong>Trương Kiến Phi</strong><span>Sinh viên thực hiện đồ án</span></div>
+      </div>
+      <p class="sitefoot__school">Đồ án chuyên ngành Công nghệ phần mềm.<br>Hệ thống TMĐT đa gian hàng tích hợp gợi ý tư vấn tự động.</p>
+    </section>
+  </div>
+
+  <div class="sitefoot__bar">
+    <div class="wrap">
+      <p class="sitefoot__copy"><span class="sitefoot__mark" aria-hidden="true">{% icon "store" %}</span><span>&copy; 2026 <b>Shopphi</b>. Thiết kế và phát triển bởi <b>Trương Kiến Phi</b>. Bảo lưu mọi quyền.</span></p>
+      <p class="sitefoot__sandbox">{% icon "lock" %}Thanh toán trực tuyến chạy trên môi trường Sandbox (thử nghiệm)</p>
+    </div>
+  </div>
 </footer>
 
 <div id="chat" class="chat" hidden data-url="{% url 'chatbot' %}" data-history="{% url 'chatbot_history' %}" role="dialog" aria-label="Trợ lý Shopphi">
