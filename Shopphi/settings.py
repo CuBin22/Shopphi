@@ -8,7 +8,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-<<<<<<< HEAD
 
 def _load_dotenv(path):
     """Đọc file .env (KEY=VALUE mỗi dòng, bỏ dòng trống và dòng bắt đầu bằng #) vào os.environ.
@@ -34,11 +33,6 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-hay-doi-khi-trien-kha
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".ngrok-free.app"]
 CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]   # chỉ dùng khi demo qua ngrok (IPN của VNPay)
-=======
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-hay-doi-khi-trien-khai")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -123,7 +117,6 @@ CHATBOT_MODEL = os.environ.get("CHATBOT_MODEL", "claude-sonnet-5-5")   # dùng k
 PAYMENT_SANDBOX_SECRET = os.environ.get("PAYMENT_SANDBOX_SECRET", "shopphi-sandbox-dev-secret-change-me")
 PAYMENT_HOLD_MINUTES = 15
 
-<<<<<<< HEAD
 # ---- Thanh toán VNPay (Sandbox) ----
 # Đăng ký merchant Sandbox miễn phí tại https://sandbox.vnpayment.vn/devreg/ (VNPay gửi TmnCode + HashSecret qua email), rồi đặt vào .env.
 VNPAY_TMN_CODE = os.environ.get("VNPAY_TMN_CODE", "")
@@ -135,11 +128,6 @@ VNPAY_RETURN_URL = os.environ.get("VNPAY_RETURN_URL", "")
 # ---- Thanh toán ZaloPay (Sandbox) ----
 # PAYMENT_PROVIDER: "vnpay" (VNPay Sandbox, mặc định), "zalopay" (ZaloPay Sandbox) hoặc "sandbox" (cổng giả lập trong dự án, chạy offline).
 PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "vnpay").lower()
-=======
-# ---- Thanh toán ZaloPay (Sandbox) ----
-# PAYMENT_PROVIDER: "zalopay" (cổng ZaloPay Sandbox thật, mặc định) hoặc "sandbox" (cổng giả lập trong dự án, chạy offline).
-PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "zalopay").lower()
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 # Giá trị mặc định dưới đây là tài khoản DEMO công khai của ZaloPay (app_id 2553) để chạy thử ngay.
 # Khi làm thật hãy đăng ký merchant Sandbox tại https://docs.zalopay.vn/ rồi đặt biến môi trường ZALOPAY_* của riêng bạn.
 ZALOPAY_APP_ID = int(os.environ.get("ZALOPAY_APP_ID", "2553"))
@@ -154,7 +142,6 @@ ZALOPAY_CALLBACK_URL = os.environ.get("ZALOPAY_CALLBACK_URL", "")
 ZALOPAY_REDIRECT_URL = os.environ.get("ZALOPAY_REDIRECT_URL", "")
 # Mã ngân hàng/hình thức: để trống = trang ZaloPay Gateway (QR đa năng, thẻ ATM, thẻ quốc tế); "zalopayapp" = mở app ZaloPay.
 ZALOPAY_BANK_CODE = os.environ.get("ZALOPAY_BANK_CODE", "")
-<<<<<<< HEAD
 
 # ---- Quên mật khẩu bằng OTP (email / SMS) ----
 OTP_TTL_MINUTES = int(os.environ.get("OTP_TTL_MINUTES", "10"))          # mã OTP có hiệu lực bao lâu
@@ -190,5 +177,3 @@ PRODUCT_IMAGE_MAX_COUNT = int(os.environ.get("PRODUCT_IMAGE_MAX_COUNT", "6"))   
 PRODUCT_IMAGE_MAX_SIDE = 1200                                                                    # cạnh dài tối đa sau khi chuẩn hóa (px)
 PRODUCT_IMAGE_MIN_SIDE = 200                                                                     # cạnh ngắn tối thiểu (px)
 LOW_STOCK_THRESHOLD = int(os.environ.get("LOW_STOCK_THRESHOLD", "5"))                            # "sắp hết hàng" khi tồn <= ngưỡng này
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

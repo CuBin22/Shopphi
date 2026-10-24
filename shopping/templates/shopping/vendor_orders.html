@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 {% extends "shopping/manage_base.html" %}
 {% load shop_extras %}
 {% block title %}Đơn hàng - Shopphi{% endblock %}
@@ -33,16 +32,4 @@
 </table></div>
 {% else %}<div class="empty"><span class="empty__ico">{% icon "receipt" %}</span><p>Không có đơn hàng nào khớp.</p></div>{% endif %}
 {% include "shopping/_pager.html" %}
-=======
-{% extends "catalog/base.html" %}
-{% load shop_extras %}
-{% block content %}
-<div class="resulthead"><h1>Đơn hàng - {{ shop.name }}</h1></div>
-<nav class="cats"><a href="{% url 'vendor_orders' %}" {% if not status %}aria-current="page"{% endif %}>Tất cả</a>
-{% for k, l in statuses %}<a href="?trang_thai={{ k }}" {% if status == k %}aria-current="page"{% endif %}>{{ l }}</a>{% endfor %}</nav>
-{% for o in orders %}
-<p class="row cartshop"><a href="{% url 'vendor_order_detail' o.pk %}">Đơn #{{ o.pk }} - {{ o.group.recipient_name }} - {{ o.created|date:"d/m H:i" }}</a>
-<span>{% if o.has_pending %}<span class="pill pill--warn">Yêu cầu hủy</span> {% endif %}{% include "shopping/_status.html" %} <strong>{{ o.total|vnd }}</strong></span></p>
-{% empty %}<div class="empty"><p>Chưa có đơn hàng.</p></div>{% endfor %}
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 {% endblock %}

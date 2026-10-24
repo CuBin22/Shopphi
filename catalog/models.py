@@ -102,7 +102,6 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse("product", args=[self.slug])
 
-<<<<<<< HEAD
     def gallery(self):
         """Danh sách ảnh để hiển thị: ảnh bìa trước, rồi các ảnh phụ theo thứ tự. Mỗi phần tử có thuộc tính url."""
         items = [self.image] if self.image else []
@@ -112,8 +111,6 @@ class Product(models.Model):
     def image_count(self):
         return (1 if self.image else 0) + self.extra_images.count()
 
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     def spec_rows(self):
         rows = []
         for line in self.specs.splitlines():
@@ -207,7 +204,6 @@ class AdminLog(models.Model):
         ordering = ["-at", "-id"]
         verbose_name = "Nhật ký quản trị"
         verbose_name_plural = "Nhật ký quản trị"
-<<<<<<< HEAD
 
 
 class ProductImage(models.Model):
@@ -221,5 +217,3 @@ class ProductImage(models.Model):
         ordering = ["position", "id"]
         verbose_name = "Ảnh phụ sản phẩm"
         verbose_name_plural = "Ảnh phụ sản phẩm"
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

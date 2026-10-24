@@ -102,10 +102,7 @@
     var stock = document.getElementById("stock");
     var qty = document.getElementById("qty");
     var add = document.getElementById("add");
-<<<<<<< HEAD
     var buyNow = document.getElementById("buynow");
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
     function current() { return form.querySelector('input[name="variant"]:checked'); }
 
@@ -117,10 +114,7 @@
       stock.textContent = s > 0 ? "Còn " + s + " sản phẩm" : "Hết hàng";
       stock.classList.toggle("is-out", s <= 0);
       add.disabled = s <= 0;
-<<<<<<< HEAD
       if (buyNow) buyNow.disabled = s <= 0;
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
       qty.max = s > 0 ? s : 1;
       if (parseInt(qty.value, 10) > s && s > 0) qty.value = s;
     }
@@ -136,7 +130,6 @@
     sync();
   }
 
-<<<<<<< HEAD
   // Thư viện ảnh ở trang chi tiết: bấm ảnh nhỏ hoặc nút trước/sau, phím mũi tên khi đang focus ở dải ảnh nhỏ.
   function initGallery() {
     var root = document.querySelector("[data-gallery]");
@@ -193,8 +186,4 @@
   initUserMenu();
   initBuy();
   initGallery();
-=======
-  document.querySelectorAll("[data-search]").forEach(initSearch);
-  initBuy();
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 })();

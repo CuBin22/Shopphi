@@ -6,11 +6,7 @@
   <h1>
     {% if q %}Kết quả cho "{{ q }}"{% elif current_category %}{{ current_category.name }}{% else %}Tất cả sản phẩm{% endif %}
   </h1>
-<<<<<<< HEAD
   <p>{{ total }} sản phẩm{% if page.paginator.num_pages > 1 %}, trang {{ page.number }}/{{ page.paginator.num_pages }}{% endif %}</p>
-=======
-  <p>{{ results|length }} sản phẩm</p>
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 </div>
 
 <form class="filters" method="get" action="{% url 'search' %}">
@@ -29,18 +25,13 @@
       {% for key, label in sorts %}<option value="{{ key }}" {% if sort == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
   </label>
-<<<<<<< HEAD
   <button type="submit" class="btn">{% icon "filter" %}Lọc</button>
-=======
-  <button type="submit">Lọc</button>
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 </form>
 
 {% if results %}
 <div class="grid">
   {% for p in results %}{% include "catalog/_card.html" with nguon=nguon %}{% endfor %}
 </div>
-<<<<<<< HEAD
 {% if page.paginator.num_pages > 1 %}
 <nav class="pager" aria-label="Phân trang">
   {% if page.has_previous %}<a href="?{{ page_query }}&amp;trang=1" aria-label="Trang đầu">&laquo;</a><a href="?{{ page_query }}&amp;trang={{ page.previous_page_number }}">&lsaquo; Trước</a>{% endif %}
@@ -55,11 +46,6 @@
 <div class="empty">
   <span class="empty__ico">{% icon "search" %}</span>
   <strong>Không tìm thấy sản phẩm phù hợp.</strong>
-=======
-{% else %}
-<div class="empty">
-  <p><strong>Không tìm thấy sản phẩm phù hợp.</strong></p>
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
   <p>Thử bớt từ khóa, bỏ bộ lọc giá hoặc chọn một danh mục.</p>
   <p><a class="btn btn--ghost" href="{% url 'home' %}">Về trang chủ</a></p>
 </div>

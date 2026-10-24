@@ -20,7 +20,6 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"{self.user.get_username()} ({self.get_role_display()})"
-<<<<<<< HEAD
 
 
 class PasswordResetOTP(models.Model):
@@ -66,5 +65,3 @@ class SignupOTP(models.Model):
 
     def __str__(self):
         return f"OTP đăng ký {self.email} ({self.created:%d/%m %H:%M})"
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

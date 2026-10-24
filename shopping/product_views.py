@@ -1,16 +1,11 @@
 """Người bán quản lý sản phẩm, danh mục, thẻ phân loại, biến thể, giá và tồn kho (UC13, FR04, BM5, QĐ5)."""
 from django import forms
-<<<<<<< HEAD
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.core.paginator import Paginator
 from django.db import transaction
-=======
-from django.contrib import messages
-from django.core.exceptions import ValidationError
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.db.models import Min, Q, Sum
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.shortcuts import get_object_or_404, redirect, render
@@ -18,12 +13,8 @@ from django.views.decorators.http import require_POST
 
 from accounts.models import Profile
 from accounts.utils import role_required
-<<<<<<< HEAD
 from catalog import images
 from catalog.models import Category, Product, ProductImage, Shop, Variant
-=======
-from catalog.models import Product, Shop, Variant
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 from . import services
 from .models import OrderItem
@@ -43,15 +34,12 @@ class ProductForm(forms.ModelForm):
         widgets = {"description": forms.Textarea(attrs={"rows": 4}), "specs": forms.Textarea(attrs={"rows": 4}),
                    "image": forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"})}
 
-<<<<<<< HEAD
     def clean_image(self):
         img = self.cleaned_data.get("image")
         if isinstance(img, UploadedFile):                 # ảnh mới tải lên: kiểm tra thật + chuẩn hóa
             return images.process_image(img)
         return img
 
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.fields["name"].error_messages["required"] = "Vui lòng nhập tên sản phẩm."
@@ -88,13 +76,10 @@ VariantFormSet = inlineformset_factory(Product, Variant, formset=BaseVariantForm
                                        extra=1, can_delete=True)
 
 
-<<<<<<< HEAD
 PAGE_SIZE = 20
 STOCK_FILTERS = [("con_hang", "Còn hàng"), ("sap_het", "Sắp hết"), ("het_hang", "Hết hàng")]
 
 
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 @vendor_only
 def product_list(request):
     shop = _my_shop(request.user)
@@ -102,19 +87,15 @@ def product_list(request):
         return redirect("manage_home")
     q = request.GET.get("q", "").strip()
     status = request.GET.get("trang_thai", "")
-<<<<<<< HEAD
     cat = request.GET.get("danh_muc", "")
     stock = request.GET.get("ton_kho", "")
     low = settings.LOW_STOCK_THRESHOLD
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     qs = Product.objects.filter(shop=shop).select_related("category") \
         .annotate(total_stock=Sum("variants__stock"), min_price=Min("variants__price"))
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(brand__icontains=q) | Q(tags__icontains=q))
     if status in dict(Product.STATUS):
         qs = qs.filter(status=status)
-<<<<<<< HEAD
     if cat.isdigit():
         qs = qs.filter(category_id=cat)
     if stock == "het_hang":
@@ -135,10 +116,6 @@ def product_list(request):
 
 def _ints(values):
     return {int(v) for v in values if str(v).isdigit()}
-=======
-    return render(request, "shopping/product_list.html", {
-        "shop": shop, "products": qs[:200], "q": q, "status": status, "statuses": Product.STATUS})
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 @vendor_only
@@ -152,7 +129,6 @@ def product_form(request, pk=None):
     # sản phẩm của gian hàng khác -> 404 (Người bán chỉ thao tác trên dữ liệu gian hàng của mình)
     product = get_object_or_404(Product, pk=pk, shop=shop) if pk else None
     obj = product or Product(shop=shop)
-<<<<<<< HEAD
     old_cover = product.image.name if product else ""     # phải đọc TRƯỚC khi form gán ảnh mới vào instance
     extras = list(product.extra_images.all()) if product else []
     extra_ids = {e.pk for e in extras}
@@ -171,17 +147,10 @@ def product_form(request, pk=None):
             gallery_errors.append(f"Mỗi sản phẩm tối đa {settings.PRODUCT_IMAGE_MAX_COUNT} ảnh (gồm ảnh bìa); "
                                   f"hiện sẽ có {total} ảnh. Hãy xóa bớt ảnh cũ hoặc chọn ít ảnh hơn.")
     if forms_ok and not gallery_errors:
-=======
-    form = ProductForm(request.POST or None, request.FILES or None, instance=obj)
-    fs = VariantFormSet(request.POST or None, instance=obj)
-    if request.method == "POST" and form.is_valid() and fs.is_valid():
-        from django.db import transaction
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         with transaction.atomic():
             saved = form.save()
             fs.instance = saved
             fs.save()
-<<<<<<< HEAD
             for e in extras:
                 if e.pk in del_ids:
                     e.delete()                              # tín hiệu post_delete xóa file sau khi commit
@@ -277,11 +246,6 @@ def inventory(request):
         "shop": shop, "variants": page.object_list, "page": page, "page_query": keep.urlencode(), "loc": flt, "q": q, "low": low,
         "n_out": Variant.objects.filter(product__shop=shop, stock=0).count(),
         "n_low": Variant.objects.filter(product__shop=shop, stock__gt=0, stock__lte=low).count()})
-=======
-        messages.success(request, "Đã lưu sản phẩm." if product else "Đã thêm sản phẩm mới.")
-        return redirect("product_list")
-    return render(request, "shopping/product_form.html", {"form": form, "fs": fs, "product": product, "shop": shop})
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 @vendor_only

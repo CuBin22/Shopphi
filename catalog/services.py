@@ -125,12 +125,8 @@ def annotated(qs):
     return qs.select_related("shop", "category").annotate(price=Min("variants__price"), stock=Sum("variants__stock"))
 
 
-<<<<<<< HEAD
 def search_queryset(q="", category="", price_from=None, price_to=None, sort="moi"):
     """Queryset sản phẩm đang bán khớp bộ lọc (chưa cắt), để phân trang hiển thị TẤT CẢ sản phẩm."""
-=======
-def search_products(q="", category="", price_from=None, price_to=None, sort="moi", limit=60):
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     qs = annotated(Product.objects.sellable())
     for token in khong_dau(q).split():
         qs = qs.filter(search_text__contains=token)
@@ -140,16 +136,11 @@ def search_products(q="", category="", price_from=None, price_to=None, sort="moi
         qs = qs.filter(price__gte=price_from)
     if price_to is not None:
         qs = qs.filter(price__lte=price_to)
-<<<<<<< HEAD
     return qs.order_by(*SORTS.get(sort, SORTS["moi"])[1])
 
 
 def search_products(q="", category="", price_from=None, price_to=None, sort="moi", limit=60):
     return list(search_queryset(q, category, price_from, price_to, sort)[:limit])
-=======
-    order = SORTS.get(sort, SORTS["moi"])[1]
-    return list(qs.order_by(*order)[:limit])
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 # ------------------------------------------------------------ gợi ý sản phẩm

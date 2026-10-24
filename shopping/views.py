@@ -1,15 +1,9 @@
 """Giao diện khách hàng: giỏ hàng, đặt hàng, theo dõi đơn, hủy đơn, đánh giá, thông báo."""
 from django.conf import settings
 from django.contrib import messages
-<<<<<<< HEAD
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
-=======
-from django.db.models import Prefetch
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.http import url_has_allowed_host_and_scheme
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.models import Profile
@@ -20,20 +14,12 @@ from catalog.models import BehaviorLog, Product, Shop, Variant
 from urllib.parse import urlencode
 
 from django.urls import reverse
-<<<<<<< HEAD
 from django.http import Http404, JsonResponse
-=======
-from django.http import JsonResponse
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.views.decorators.csrf import csrf_exempt
 
 from . import payments, services
 from .cart import Cart
-<<<<<<< HEAD
 from .models import Order, OrderGroup, PaymentTransaction
-=======
-from .models import Notification, Order, OrderGroup, OrderItem, PaymentTransaction, Review
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from .services import OrderError, build_checkout
 
 customer_only = role_required(Profile.CUSTOMER)
@@ -56,13 +42,9 @@ def _int(value, default=1):
 def cart(request):
     catalog_services.get_actor(request)
     shops = Cart(request).grouped()
-<<<<<<< HEAD
     has_over = any(l["over"] for s in shops for l in s["lines"])
     return render(request, "shopping/cart.html", {"shops": shops, "grand": sum(s["subtotal"] for s in shops),
                                                   "has_over": has_over})
-=======
-    return render(request, "shopping/cart.html", {"shops": shops, "grand": sum(s["subtotal"] for s in shops)})
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 @require_POST
@@ -91,7 +73,6 @@ def cart_add(request):
     return redirect(back)
 
 
-<<<<<<< HEAD
 BUY_NOW_KEY = "buy_now"
 
 
@@ -122,8 +103,6 @@ def buy_now(request):
     return redirect(reverse("checkout") + "?mua-ngay=1")
 
 
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 @require_POST
 def cart_update(request):
     catalog_services.get_actor(request)
@@ -146,7 +125,6 @@ def cart_remove(request):
 
 
 # ------------------------------------------------------------------ đặt hàng
-<<<<<<< HEAD
 def _save_default_address(profile, info):
     """Khách tích "Lưu làm địa chỉ mặc định": cập nhật hồ sơ (số điện thoại chỉ điền khi hồ sơ chưa có)."""
     try:
@@ -186,17 +164,6 @@ def checkout(request):
             messages.warning(request, "Giỏ hàng đang trống.")
             return redirect("cart")
     profile = get_profile(request.user)
-=======
-@customer_only
-def checkout(request):
-    cart_obj = Cart(request)
-    lines = [{"v": l["v"], "qty": l["qty"]} for l in cart_obj.lines()]
-    if not lines:
-        messages.warning(request, "Giỏ hàng đang trống.")
-        return redirect("cart")
-    profile = get_profile(request.user)
-    post = request.method == "POST"
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     data = request.POST if post else {}
     g = lambda k, d="": (data.get(k, d) if post else d)  # noqa: E731
     info = {
@@ -214,16 +181,12 @@ def checkout(request):
 
     if post and data.get("action") == "place":
         try:
-<<<<<<< HEAD
             group = services.place_order(request.user, {l["v"].pk: l["qty"] for l in lines}, info, method, global_code, shop_codes,
                                          clear_cart=not is_buy_now)
             if is_buy_now:
                 request.session.pop(BUY_NOW_KEY, None)
             if data.get("save_default"):
                 _save_default_address(profile, info)
-=======
-            group = services.place_order(request.user, {l["v"].pk: l["qty"] for l in lines}, info, method, global_code, shop_codes)
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
             messages.success(request, "Đặt hàng thành công.")
             return redirect("order_success", group_id=group.pk)
         except OrderError as e:
@@ -235,21 +198,15 @@ def checkout(request):
     return render(request, "shopping/checkout.html", {
         "co": co, "info": info, "method": method, "global_code": global_code,
         "global_error": co.errors.get("global"), "shipping_fee": services.SHIPPING_FEE,
-<<<<<<< HEAD
         "save_default": bool(post and data.get("save_default")),
         "buy_now": is_buy_now, "back_url": (item or {}).get("back") if is_buy_now else None,
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         "provider_label": payments.provider_label(), "hold_minutes": getattr(settings, "PAYMENT_HOLD_MINUTES", 15),
     })
 
 
 @customer_only
 def order_success(request, group_id):
-<<<<<<< HEAD
     payments.reconcile_user(request.user)
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     _timeouts()
     group = get_object_or_404(OrderGroup, pk=group_id, user=request.user)
     orders = list(group.orders.select_related("shop"))
@@ -268,37 +225,6 @@ def _timeouts():
 
 
 @customer_only
-<<<<<<< HEAD
-=======
-def my_orders(request):
-    _timeouts()
-    groups = OrderGroup.objects.filter(user=request.user).prefetch_related(
-        Prefetch("orders", queryset=Order.objects.select_related("shop").prefetch_related("items"))).order_by("-created", "-id")
-    return render(request, "shopping/my_orders.html", {"groups": groups})
-
-
-@customer_only
-def order_detail(request, pk):
-    _timeouts()
-    order = get_object_or_404(Order.objects.select_related("shop", "group"), pk=pk, group__user=request.user)
-    items = list(order.items.select_related("variant__product"))
-    reviewed = set(Review.objects.filter(user=request.user, product_id__in=[i.variant.product_id for i in items])
-                   .values_list("product_id", flat=True))
-    for i in items:
-        i.product = i.variant.product
-        i.reviewed = i.variant.product_id in reviewed
-    return render(request, "shopping/order_detail.html", {
-        "o": order, "items": items, "logs": order.status_logs.select_related("actor"),
-        "requests": order.cancel_requests.all(), "pending": order.pending_cancel,
-        "can_cancel": order.status in (Order.PENDING, Order.CONFIRMED) and not order.pending_cancel,
-        "can_pay": order.group.payment_method == OrderGroup.ONLINE and order.status != Order.CANCELED
-        and order.payment_status == Order.UNPAID,
-        "provider_label": payments.provider_label(),
-    })
-
-
-@customer_only
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 @require_POST
 def order_cancel(request, pk):
     try:
@@ -329,39 +255,16 @@ def review_create(request, pk, product_id):
         messages.success(request, "Đã gửi đánh giá. Cảm ơn bạn!")
     except OrderError as e:
         messages.error(request, str(e))
-<<<<<<< HEAD
     if request.POST.get("from") == "reviews":
         return redirect("my_reviews")
     return redirect("order_detail", pk=pk)
 
 
-=======
-    return redirect("order_detail", pk=pk)
-
-
-# ------------------------------------------------------------------ thông báo
-def notifications(request):
-    if not request.user.is_authenticated:
-        from django.contrib.auth.views import redirect_to_login
-        return redirect_to_login(request.get_full_path())
-    items = list(Notification.objects.filter(user=request.user)[:50])
-    unread = [n.pk for n in items if not n.read]
-    Notification.objects.filter(pk__in=unread).update(read=True)
-    for n in items:
-        n.was_unread = n.pk in unread
-    return render(request, "shopping/notifications.html", {"items": items})
-
-
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 # ----------------------------------------------------- thanh toán trực tuyến (UC07)
 @customer_only
 @require_POST
 def pay_group(request, group_id):
-<<<<<<< HEAD
     """Tạo yêu cầu thanh toán cho cả nhóm đơn rồi chuyển hướng sang VNPay/ZaloPay (hoặc cổng giả lập khi PAYMENT_PROVIDER=sandbox)."""
-=======
-    """Tạo yêu cầu thanh toán cho cả nhóm đơn rồi chuyển hướng sang ZaloPay (hoặc cổng giả lập khi PAYMENT_PROVIDER=sandbox)."""
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     try:
         txn = payments.create_payment(request.user, group_id)
         url = payments.start_online_payment(txn, request)
@@ -372,7 +275,6 @@ def pay_group(request, group_id):
     return redirect(url)
 
 
-<<<<<<< HEAD
 @customer_only
 @require_GET
 @never_cache
@@ -400,11 +302,6 @@ def sandbox_gateway(request, ref):
     txn = get_object_or_404(PaymentTransaction.objects.select_related("group"), ref=ref)
     if payments.provider() != "sandbox" or txn.provider != PaymentTransaction.SANDBOX or txn.group.user_id != request.user.pk:
         raise Http404   # cổng giả lập tự ký kết quả: không được mở khi dùng ZaloPay hay cho người khác
-=======
-def sandbox_gateway(request, ref):
-    """Cổng thanh toán GIẢ LẬP (Sandbox). Không nhận thông tin thẻ; chỉ cho chọn kết quả thử nghiệm."""
-    txn = get_object_or_404(PaymentTransaction.objects.select_related("group"), ref=ref)
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     if request.method == "POST":
         params = payments.build_callback(txn, request.POST.get("result", "cancel"))
         return redirect(reverse("payment_return") + "?" + urlencode(params))
@@ -473,7 +370,6 @@ def zalopay_return(request):
     if request.user.is_authenticated and txn.group.user_id == request.user.pk:
         return redirect("order_success", group_id=txn.group_id)
     return back
-<<<<<<< HEAD
 
 
 # -------------------------------------------------------------------- VNPay
@@ -509,5 +405,3 @@ def vnpay_return(request):
     if request.user.is_authenticated and txn.group.user_id == request.user.pk:
         return redirect("order_success", group_id=txn.group_id)
     return back
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

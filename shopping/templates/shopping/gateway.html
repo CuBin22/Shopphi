@@ -2,11 +2,7 @@
 {% load shop_extras %}
 {% block title %}Cổng thanh toán Sandbox - Shopphi{% endblock %}
 {% block content %}
-<<<<<<< HEAD
 <div class="resulthead"><h1>{% icon "credit-card" %}Cổng thanh toán <span class="pill pill--CHO_XAC_NHAN">SANDBOX - THỬ NGHIỆM</span></h1>
-=======
-<div class="resulthead"><h1>Cổng thanh toán <span class="pill">SANDBOX - THỬ NGHIỆM</span></h1>
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 <p>Đây là cổng giả lập, không kết nối ngân hàng hay ví điện tử thật và không thu thập thông tin thẻ.</p></div>
 <section class="formcard">
   <p class="row"><span>Mã giao dịch</span><strong>{{ txn.ref }}</strong></p>
@@ -15,13 +11,8 @@
   {% if stale %}<p class="msg msg--warning">Giao dịch này đã ở trạng thái "{{ txn.get_status_display }}". Nếu vẫn bấm Thanh toán thành công, hệ thống sẽ ghi nhận Thanh toán muộn và chuyển Chờ hoàn tiền (mô phỏng).</p>{% endif %}
   <form method="post">{% csrf_token %}
     <div class="actions">
-<<<<<<< HEAD
       <button class="btn" name="result" value="success" type="submit">{% icon "check" %}Thanh toán thành công</button>
       <button class="btn btn--danger" name="result" value="fail" type="submit">Thanh toán thất bại</button>
-=======
-      <button class="btn" name="result" value="success" type="submit">Thanh toán thành công</button>
-      <button class="btn btn--ghost" name="result" value="fail" type="submit">Thanh toán thất bại</button>
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
       <button class="btn btn--ghost" name="result" value="cancel" type="submit">Hủy tại cổng</button>
     </div>
   </form>

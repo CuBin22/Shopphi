@@ -42,14 +42,9 @@ def hmac_sha256(key: str, message: str) -> str:
 
 
 def compact_json(obj) -> str:
-<<<<<<< HEAD
     """JSON gọn. Chuỗi này vừa gửi đi vừa đưa vào MAC nên phải dùng đúng một lần dựng.
     ensure_ascii=True: tên gian hàng tiếng Việt thành \\uXXXX, tránh ZaloPay tính MAC trên chuỗi giải mã khác và báo "Chữ ký không hợp lệ"."""
     return json.dumps(obj, separators=(",", ":"), ensure_ascii=True)
-=======
-    """JSON gọn, giữ nguyên tiếng Việt. Chuỗi này vừa gửi đi vừa đưa vào MAC nên phải dùng đúng một lần dựng."""
-    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
 
 def now_ms() -> int:
@@ -132,11 +127,8 @@ def create_order(app_trans_id, app_user, amount, description, items, redirect_ur
 
     res = _post("/v2/create", fields)
     if res.get("return_code") != RETURN_SUCCESS or not res.get("order_url"):
-<<<<<<< HEAD
         logger.warning("ZaloPay create lỗi: res=%s | app_id=%s key1_len=%s signed=%s", res, app_id,
                        len(settings.ZALOPAY_KEY1), f"{app_id}|{app_trans_id}|{fields['app_user']}|{amount}|{app_time}|{embed_data}|{item_json}")
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
         raise ZaloPayError(res.get("sub_return_message") or res.get("return_message") or "ZaloPay từ chối tạo đơn",
                            code=res.get("sub_return_code"))
     return res

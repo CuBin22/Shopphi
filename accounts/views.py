@@ -1,29 +1,20 @@
 import math
 from datetime import timedelta
 
-<<<<<<< HEAD
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import authenticate, get_user_model, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-=======
-from django.contrib import messages
-from django.contrib.auth import authenticate, get_user_model, login, logout
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
-<<<<<<< HEAD
 from . import otp
 from .forms import (ChangePasswordForm, ForgotForm, LoginForm, PHONE_RE, ProfileForm, RegisterForm, ResetForm,
                     VerifySignupForm)
-=======
-from .forms import LoginForm, RegisterForm
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 from .models import Profile
 from .utils import get_profile, merge_anonymous, normalize_identifier
 
@@ -38,21 +29,16 @@ def _home_for(profile):
     return "manage_home"
 
 
-<<<<<<< HEAD
 SESSION_SIGNUP_KEY = "signup_pending"
 
 
 def register(request):
     """Bước 1: nhập thông tin bằng Gmail -> gửi OTP. CHƯA tạo tài khoản; dữ liệu (mật khẩu đã băm) giữ trong session."""
-=======
-def register(request):
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     if request.user.is_authenticated:
         return redirect("home")
     form = RegisterForm(request.POST or None, initial={"role": Profile.CUSTOMER})
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
-<<<<<<< HEAD
         email = d["identifier"]
         sent = True
         try:
@@ -116,21 +102,6 @@ def resend_register_otp(request):
     return redirect("verify_register")
 
 
-=======
-        ident = d["identifier"]
-        with transaction.atomic():
-            user = User.objects.create_user(username=ident, password=d["password"], first_name=d["full_name"].strip(),
-                                            email=ident if "@" in ident else "")
-            Profile.objects.create(user=user, role=d["role"], phone="" if "@" in ident else ident,
-                                   default_address=d["default_address"].strip())
-        messages.success(request, "Đăng ký thành công. Hãy đăng nhập." + (
-            " Tài khoản Người bán cần đăng ký gian hàng và chờ Quản trị viên duyệt trước khi đăng bán."
-            if d["role"] == Profile.VENDOR else ""))
-        return redirect("login")
-    return render(request, "accounts/register.html", {"form": form})
-
-
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("home")
@@ -181,7 +152,6 @@ def logout_view(request):
     logout(request)
     messages.success(request, "Bạn đã đăng xuất.")
     return redirect("home")
-<<<<<<< HEAD
 
 
 # ----------------------------------------------------------- quên mật khẩu (OTP)
@@ -267,5 +237,3 @@ def change_password(request):
         messages.success(request, "Đã đổi mật khẩu.")
         return redirect("profile")
     return render(request, "accounts/password_change.html", {"form": form})
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5

@@ -40,10 +40,7 @@ class Coupon(models.Model):
     expires = models.DateTimeField("Ngày hết hạn")
     max_uses = models.PositiveIntegerField("Số lượt tối đa", default=100)
     used_count = models.PositiveIntegerField("Số lượt đã dùng", default=0, editable=False)
-<<<<<<< HEAD
     is_active = models.BooleanField("Đang bật", default=True, editable=False)
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
     created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", editable=False)
     created = models.DateTimeField(default=timezone.now, editable=False)
 
@@ -269,13 +266,8 @@ class PaymentTransaction(models.Model):
     REFUND_WAIT, REFUNDED = "CHO_HOAN_TIEN", "DA_HOAN_TIEN"
     REFUND = [("", "Không"), (REFUND_WAIT, "Chờ hoàn tiền"), (REFUNDED, "Đã hoàn tiền")]
 
-<<<<<<< HEAD
     SANDBOX, ZALOPAY, VNPAY = "SANDBOX", "ZALOPAY", "VNPAY"
     PROVIDERS = [(SANDBOX, "Cổng giả lập"), (ZALOPAY, "ZaloPay"), (VNPAY, "VNPay")]
-=======
-    SANDBOX, ZALOPAY = "SANDBOX", "ZALOPAY"
-    PROVIDERS = [(SANDBOX, "Cổng giả lập"), (ZALOPAY, "ZaloPay")]
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
 
     ref = models.CharField("Mã giao dịch nội bộ", max_length=40, unique=True)
     provider = models.CharField("Cổng thanh toán", max_length=10, choices=PROVIDERS, default=SANDBOX)

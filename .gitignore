@@ -2,9 +2,6 @@
 __pycache__/
 *.pyc
 db.sqlite3
-<<<<<<< HEAD
 media/
 backups/
 .env
-=======
->>>>>>> b5ec305f16c5d6ab95ed030332f7c84be485dcf5
