@@ -14,6 +14,8 @@
   <p class="row"><strong>Tổng</strong><strong>{{ o.total|vnd }}</strong></p>
   <p class="shop">{% icon "map-pin" %}Giao tới: {{ o.group.recipient_name }}, {{ o.group.recipient_phone }}, {{ o.group.address }} ({{ o.group.get_payment_method_display }})</p>
   {% if o.tracking_code %}<p class="shop">{% icon "truck" %}{{ o.carrier }} - {{ o.tracking_code }}</p>{% endif %}
+  {% if o.ghn_status %}<p>Trạng thái GHN: {{ o.ghn_status }}</p><form method="post">{% csrf_token %}<button class="btn btn--ghost" name="action" value="ghn_sync">Đồng bộ GHN</button></form>{% endif %}
+  {% if o.ghn_creation_pending %}<p class="warn">Chưa xác định được kết quả tạo vận đơn. Bấm Xác nhận đơn lần nữa để lấy lại mã GHN; đơn chưa thể hủy trong lúc này.</p>{% endif %}
   {% if o.status == 'DA_HUY' %}<p class="warn">Đã hủy: {{ o.cancel_reason }}</p>{% endif %}
 </section>
 <section class="panel"><div class="panel__head"><h2>{% icon "history" %}Nhật ký trạng thái</h2></div>
@@ -27,7 +29,7 @@
 {% endif %}
 {% if o.status == 'CHO_XAC_NHAN' %}<form method="post">{% csrf_token %}<button class="btn btn--lg btn--block" name="action" value="confirm">{% icon "circle-check" %}Xác nhận đơn</button></form>{% endif %}
 {% if o.status == 'DA_XAC_NHAN' or o.status == 'DANG_GIAO' %}<p><a class="btn btn--ghost btn--block" href="{% url 'packing_slip' o.pk %}" target="_blank" rel="noopener">{% icon "printer" %}In phiếu giao vận</a></p>{% endif %}
-{% if o.status == 'DA_XAC_NHAN' %}
+{% if o.status == 'DA_XAC_NHAN' and not o.shipping_data %}
 <form method="post" class="formcard" style="max-width:none">{% csrf_token %}<h2>{% icon "truck" %} Giao hàng</h2>
   <label>Đơn vị vận chuyển<input name="carrier" placeholder="GHN, GHTK..."></label><label>Mã vận đơn (duy nhất)<input name="tracking"></label>
   <button class="btn" name="action" value="ship">Chuyển sang Đang giao</button></form>

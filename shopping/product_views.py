@@ -72,7 +72,8 @@ class BaseVariantFormSet(BaseInlineFormSet):
             raise ValidationError("Sản phẩm cần ít nhất một biến thể có giá bán (lớn hơn 0) và số lượng tồn (không âm).")
 
 
-VariantFormSet = inlineformset_factory(Product, Variant, formset=BaseVariantFormSet, fields=["name", "price", "stock"],
+VariantFormSet = inlineformset_factory(Product, Variant, formset=BaseVariantFormSet,
+                                       fields=["name", "price", "stock", "weight", "length", "width", "height"],
                                        extra=1, can_delete=True)
 
 

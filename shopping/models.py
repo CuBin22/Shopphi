@@ -127,6 +127,10 @@ class Order(models.Model):
     total = models.DecimalField("Tổng thanh toán", max_digits=12, decimal_places=0)
     carrier = models.CharField("Đơn vị vận chuyển", max_length=60, blank=True)
     tracking_code = models.CharField("Mã vận đơn", max_length=60, blank=True)
+    shipping_data = models.JSONField("Thông tin gửi GHN lúc đặt hàng", default=dict, blank=True, editable=False)
+    ghn_status = models.CharField("Trạng thái GHN", max_length=40, blank=True, editable=False)
+    ghn_updated_at = models.DateTimeField(null=True, blank=True, editable=False)
+    ghn_creation_pending = models.BooleanField(default=False, editable=False)
     shipped_at = models.DateTimeField(null=True, blank=True)
     cancel_reason = models.CharField("Lý do hủy", max_length=255, blank=True)
     payment_txn = models.ForeignKey("PaymentTransaction", null=True, blank=True, on_delete=models.SET_NULL,

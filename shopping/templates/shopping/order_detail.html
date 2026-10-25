@@ -64,6 +64,7 @@
 <div class="dash">
 <section class="cartshop">
   <h2>{% icon "map-pin" %}Giao hàng</h2>
+  {% if o.ghn_status %}<p>Trạng thái GHN: <strong>{{ o.ghn_status }}</strong></p>{% endif %}
   <p><strong>{{ group.recipient_name }}</strong> &middot; {{ group.recipient_phone }}</p>
   <p class="shop">{{ group.address }}</p>
   {% if o.tracking_code %}<p>{% icon "truck" %}{{ o.carrier }}, mã vận đơn <strong>{{ o.tracking_code }}</strong>{% if o.shipped_at %} <span class="shop">(giao từ {{ o.shipped_at|date:"H:i d/m/Y" }})</span>{% endif %}</p>
@@ -104,7 +105,7 @@
 <div class="actions actions--col">
   {% if o.status == 'DANG_GIAO' %}
   <form method="post" action="{% url 'order_received' o.pk %}">{% csrf_token %}<button class="btn btn--block" type="submit">{% icon "circle-check" %}Đã nhận hàng</button>
-    <p class="shop">Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.</p></form>
+    <p class="shop">{% if o.shipping_data %}Trạng thái giao hàng được đồng bộ từ GHN.{% else %}Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.{% endif %}</p></form>
   {% endif %}
   {% if can_reorder %}<form method="post" action="{% url 'order_reorder' o.pk %}">{% csrf_token %}<button class="btn btn--ghost btn--block" type="submit">{% icon "cart" %}Mua lại</button></form>{% endif %}
 </div>

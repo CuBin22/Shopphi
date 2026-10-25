@@ -177,3 +177,11 @@ PRODUCT_IMAGE_MAX_COUNT = int(os.environ.get("PRODUCT_IMAGE_MAX_COUNT", "6"))   
 PRODUCT_IMAGE_MAX_SIDE = 1200                                                                    # cạnh dài tối đa sau khi chuẩn hóa (px)
 PRODUCT_IMAGE_MIN_SIDE = 200                                                                     # cạnh ngắn tối thiểu (px)
 LOW_STOCK_THRESHOLD = int(os.environ.get("LOW_STOCK_THRESHOLD", "5"))                            # "sắp hết hàng" khi tồn <= ngưỡng này
+
+# GHN: bật sau khi khai báo token và gán Shop ID cho từng gian hàng trong Django Admin.
+GHN_ENABLED = os.environ.get("GHN_ENABLED", "0") == "1"
+GHN_TOKEN = os.environ.get("GHN_TOKEN", "")
+GHN_SHOP_ID = int(os.environ.get("GHN_SHOP_ID", "0") or "0")  # kho dùng để tra danh mục địa chỉ
+GHN_API_URL = os.environ.get("GHN_API_URL", "https://dev-online-gateway.ghn.vn").rstrip("/")
+GHN_TIMEOUT = int(os.environ.get("GHN_TIMEOUT", "10"))
+GHN_WEBHOOK_SECRET = os.environ.get("GHN_WEBHOOK_SECRET", "")

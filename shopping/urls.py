@@ -6,8 +6,11 @@ from . import manage_views as m
 from . import product_views as pv
 from . import vendor_views as vv
 from . import views as v
+from . import ghn_views
 
 urlpatterns = [
+    path("van-chuyen/ghn/dia-chi/<str:kind>/", ghn_views.addresses, name="ghn_addresses"),
+    path("van-chuyen/ghn/webhook/", ghn_views.webhook, name="ghn_webhook"),
     path("gio-hang/", v.cart, name="cart"),
     path("gio-hang/them/", v.cart_add, name="cart_add"),
     path("gio-hang/sua/", v.cart_update, name="cart_update"),

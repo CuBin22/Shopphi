@@ -202,6 +202,10 @@ def vendor_order_detail(request, pk):
             elif action == "ship":
                 services.update_status(request.user, pk, Order.SHIPPING, request.POST.get("carrier"), request.POST.get("tracking"))
                 messages.success(request, "Đơn đã chuyển sang Đang giao.")
+            elif action == "ghn_sync":
+                from .shipping import sync_order
+                sync_order(order.pk)
+                messages.success(request, "Đã đồng bộ trạng thái GHN.")
             elif action == "cancel":
                 services.vendor_cancel(request.user, pk, request.POST.get("reason"))
                 messages.success(request, "Đã hủy đơn và hoàn trả tồn kho.")

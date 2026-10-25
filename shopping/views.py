@@ -170,6 +170,7 @@ def checkout(request):
         "name": g("name", request.user.first_name),
         "phone": g("phone", profile.phone),
         "address": g("address", profile.default_address),
+        "province_id": g("province_id"), "district_id": g("district_id"), "ward_code": g("ward_code"),
     }
     method = g("payment_method", OrderGroup.COD)
     global_code = g("global_code").strip()
@@ -178,9 +179,33 @@ def checkout(request):
         sid = ln["v"].product.shop_id
         shop_codes[sid] = g(f"coupon_{sid}").strip()
     co = build_checkout(lines, global_code, shop_codes)
+    shipping_error = ""
+    shipping_quote = ""
+    if settings.GHN_ENABLED:
+        from django.core import signing
+        from . import ghn
+        try:
+            ghn.quote_checkout(co, info, method)
+            quote_state = {"total": co.total, "destination": [info["province_id"], info["district_id"], info["ward_code"]],
+                           "parts": [[p.shop.pk, p.shipping, p.total] for p in co.parts]}
+            shipping_quote = signing.dumps(quote_state, salt="ghn-quote")
+        except OrderError as exc:
+            shipping_error = str(exc)
+            for part in co.parts:
+                part.shipping = 0
 
     if post and data.get("action") == "place":
         try:
+            if settings.GHN_ENABLED:
+                if shipping_error:
+                    raise OrderError(shipping_error)
+                try:
+                    accepted = signing.loads(data.get("shipping_quote", ""), salt="ghn-quote", max_age=900)
+                except signing.BadSignature:
+                    raise OrderError("Vui lòng bấm Tính phí GHN và kiểm tra tổng tiền trước khi đặt hàng.") from None
+                if accepted != quote_state:
+                    raise OrderError("Phí hoặc địa chỉ đã thay đổi. Vui lòng kiểm tra tổng tiền mới rồi đặt lại.")
+                info["expected_total"] = co.total
             group = services.place_order(request.user, {l["v"].pk: l["qty"] for l in lines}, info, method, global_code, shop_codes,
                                          clear_cart=not is_buy_now)
             if is_buy_now:
@@ -201,6 +226,7 @@ def checkout(request):
         "save_default": bool(post and data.get("save_default")),
         "buy_now": is_buy_now, "back_url": (item or {}).get("back") if is_buy_now else None,
         "provider_label": payments.provider_label(), "hold_minutes": getattr(settings, "PAYMENT_HOLD_MINUTES", 15),
+        "ghn_enabled": settings.GHN_ENABLED, "shipping_error": shipping_error, "shipping_quote": shipping_quote,
     })
 
 

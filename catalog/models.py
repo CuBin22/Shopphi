@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -36,6 +36,8 @@ class Shop(models.Model):
     name = models.CharField("Tên gian hàng", max_length=120, unique=True)
     description = models.TextField("Mô tả", blank=True)
     pickup_address = models.CharField("Địa chỉ lấy hàng", max_length=255, blank=True)
+    ghn_shop_id = models.PositiveIntegerField("Shop ID GHN", null=True, blank=True,
+        validators=[MinValueValidator(1)], help_text="Quản trị viên gán kho GHN thuộc tài khoản API của sàn.")
     contact = models.CharField("Số điện thoại / Email liên hệ", max_length=120, blank=True)
     shop_type = models.CharField("Loại hình", max_length=14, choices=SHOP_TYPES, default="CA_NHAN")
     status = models.CharField("Trạng thái", max_length=12, choices=STATUS, default=PENDING)
@@ -129,6 +131,14 @@ class Variant(models.Model):
     price = models.DecimalField("Giá bán (đã gồm VAT)", max_digits=12, decimal_places=0,
                                 validators=[MinValueValidator(1)])
     stock = models.PositiveIntegerField("Tồn kho", default=0)
+    weight = models.PositiveIntegerField("Khối lượng đóng gói (gram)", null=True, blank=True,
+                                         validators=[MinValueValidator(1), MaxValueValidator(50000)])
+    length = models.PositiveSmallIntegerField("Dài (cm)", null=True, blank=True,
+                                              validators=[MinValueValidator(1), MaxValueValidator(200)])
+    width = models.PositiveSmallIntegerField("Rộng (cm)", null=True, blank=True,
+                                             validators=[MinValueValidator(1), MaxValueValidator(200)])
+    height = models.PositiveSmallIntegerField("Cao (cm)", null=True, blank=True,
+                                              validators=[MinValueValidator(1), MaxValueValidator(200)])
 
     class Meta:
         ordering = ["id"]

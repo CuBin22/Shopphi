@@ -4,6 +4,7 @@ Mọi thao tác ghi nhiều bảng đều chạy trong một giao dịch cơ s�
 được trừ bằng UPDATE có điều kiện nên an toàn khi nhiều khách đặt đồng thời.
 """
 import logging
+import uuid
 from dataclasses import dataclass, field
 from datetime import timedelta
 
@@ -207,6 +208,11 @@ def place_order(user, wanted, info, payment_method, global_code="", shop_codes=N
         co = build_checkout(lines, global_code, shop_codes, now=now)
         if co.errors:
             raise OrderError(next(iter(co.errors.values())))
+        if settings.GHN_ENABLED:
+            from .ghn import quote_checkout
+            quote_checkout(co, info, payment_method)
+            if "expected_total" in info and info["expected_total"] != co.total:
+                raise OrderError("Phí GHN vừa thay đổi. Vui lòng tính phí lại trước khi đặt hàng.")
 
         group = OrderGroup.objects.create(
             user=user, recipient_name=info["name"].strip(), recipient_phone=info["phone"].strip(),
@@ -223,7 +229,9 @@ def place_order(user, wanted, info, payment_method, global_code="", shop_codes=N
             order = Order.objects.create(
                 group=group, shop=part.shop, shop_coupon=part.coupon, subtotal=part.subtotal,
                 shop_discount=part.shop_discount, global_discount=part.global_share,
-                shipping_fee=part.shipping, total=part.total, created=now)
+                shipping_fee=part.shipping, total=part.total, created=now,
+                shipping_data=({**part.shipping_data, "client_order_code": "SP-" + uuid.uuid4().hex}
+                               if settings.GHN_ENABLED else {}))
             OrderItem.objects.bulk_create([
                 OrderItem(order=order, variant=l["v"], product_name=l["v"].product.name, variant_name=l["v"].name,
                           unit_price=l["v"].price, qty=l["qty"]) for l in part.lines])
@@ -266,7 +274,7 @@ def _check_vendor(order, user):
 
 
 # ----------------------------------------------------------------- hủy đơn
-def cancel_order(order_id, actor, reason, auto=False):
+def cancel_order(order_id, actor, reason, auto=False, _ghn_verified=False):
     """Hủy đơn: hoàn tồn kho, hoàn lượt mã, chuyển trạng thái thanh toán, ghi nhật ký (cùng một giao dịch)."""
     with transaction.atomic():
         order = _lock_order(order_id)
@@ -274,6 +282,11 @@ def cancel_order(order_id, actor, reason, auto=False):
             raise OrderError("Đơn hàng đã được hủy trước đó.")
         if order.status not in (Order.PENDING, Order.CONFIRMED):
             raise OrderError("Đơn đang giao hoặc đã hoàn thành không được hủy.")
+        if order.ghn_creation_pending:
+            raise OrderError("GHN chưa xác định kết quả tạo vận đơn. Người bán cần bấm xác nhận lại trước khi hủy.")
+        if order.shipping_data and order.tracking_code and not _ghn_verified:
+            from .shipping import cancel_shipment
+            cancel_shipment(order)
 
         restored = []
         for item in sorted(order.items.all(), key=lambda i: i.variant_id):
@@ -368,6 +381,9 @@ def vendor_resolve_cancel(user, order_id, accept, reject_reason=""):
 # ------------------------------------------------------- cập nhật trạng thái
 def update_status(user, order_id, new_status, carrier="", tracking=""):
     """Người bán chuyển tuần tự: Chờ xác nhận -> Đã xác nhận -> Đang giao (QĐ10)."""
+    if new_status == Order.CONFIRMED and Order.objects.filter(pk=order_id).exclude(shipping_data={}).exists():
+        from .shipping import confirm_order
+        return confirm_order(user, order_id)
     carrier, tracking = (carrier or "").strip(), (tracking or "").strip()
     try:
         with transaction.atomic():
@@ -382,6 +398,8 @@ def update_status(user, order_id, new_status, carrier="", tracking=""):
                 if order.group.payment_method == OrderGroup.ONLINE and order.payment_status != Order.PAID:
                     raise OrderError("Đơn thanh toán trực tuyến chỉ được xác nhận khi đã thanh toán.")
             elif new_status == Order.SHIPPING and old == Order.CONFIRMED:
+                if order.shipping_data:
+                    raise OrderError("Đơn GHN cập nhật trạng thái từ hãng vận chuyển. Hãy bấm Đồng bộ GHN.")
                 if order.cancel_requests.filter(result=CancelRequest.PENDING).exists():
                     raise OrderError("Đơn còn yêu cầu hủy chờ xử lý, hãy chấp nhận hoặc từ chối trước khi giao.")
                 if not carrier or not tracking:
@@ -401,7 +419,7 @@ def update_status(user, order_id, new_status, carrier="", tracking=""):
     return order
 
 
-def complete_order(order_id, actor=None, auto=False):
+def complete_order(order_id, actor=None, auto=False, ghn=False):
     with transaction.atomic():
         order = _lock_order(order_id)
         if order.status != Order.SHIPPING:
@@ -410,7 +428,8 @@ def complete_order(order_id, actor=None, auto=False):
         if order.payment_status == Order.UNPAID and order.group.payment_method == OrderGroup.COD:
             order.payment_status = Order.PAID      # COD: đã thu tiền khi giao
         order.save(update_fields=["status", "payment_status"])
-        _log(order, Order.SHIPPING, Order.DONE, actor, "Tự động hoàn thành sau 7 ngày" if auto else "Khách hàng xác nhận đã nhận hàng")
+        _log(order, Order.SHIPPING, Order.DONE, actor, "GHN xác nhận giao thành công" if ghn else
+             "Tự động hoàn thành sau 7 ngày" if auto else "Khách hàng xác nhận đã nhận hàng")
         try:   # PURCHASE ghi khi đơn Hoàn thành, mỗi sản phẩm một dòng; lỗi log không làm hỏng giao dịch (NV9)
             with transaction.atomic():
                 pids = {i.variant.product_id for i in order.items.select_related("variant")}
@@ -450,7 +469,7 @@ def run_timeouts(now=None):
             accepted += 1
         except OrderError:
             pass
-    for oid in Order.objects.filter(status=Order.SHIPPING, shipped_at__lte=now - timedelta(days=AUTO_COMPLETE_DAYS)) \
+    for oid in Order.objects.filter(status=Order.SHIPPING, shipping_data={}, shipped_at__lte=now - timedelta(days=AUTO_COMPLETE_DAYS)) \
             .values_list("pk", flat=True):
         try:
             complete_order(oid, actor=None, auto=True)
