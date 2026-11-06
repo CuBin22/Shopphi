@@ -5,6 +5,7 @@
   if (!box) return;
   var log = document.getElementById("chat-log"), form = document.getElementById("chat-form");
   var input = document.getElementById("chat-input"), ctx = document.getElementById("chat-ctx");
+  var intro = document.getElementById("chat-intro");
   var product = null, loaded = false;
   var csrf = (document.querySelector('meta[name="csrf"]') || {}).content || "";
 
@@ -24,12 +25,14 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         (d.messages || []).forEach(function (m) { add(m.q, "me"); add(m.a, "bot"); });
-        if (!log.children.length) add("Xin chào! Mình có thể giúp bạn xem giá, tồn kho, thông số hoặc gợi ý sản phẩm.", "bot");
+        if (intro && log.children.length) intro.hidden = true;
+        if (!log.children.length) add("Xin chào! Mình có thể tra giá, tồn kho, thông số sản phẩm, hướng dẫn GHN và trạng thái đơn hàng của bạn. Bạn đang cần xem thông tin nào?", "bot");
       }).catch(function () { add("Không tải được lịch sử hội thoại.", "bot"); });
   }
 
   function open(btn) {
     box.hidden = false;
+    document.getElementById("chat-open").setAttribute("aria-expanded", "true");
     var pid = btn && btn.dataset ? btn.dataset.product : null;
     product = pid || null;
     if (product) { ctx.hidden = false; ctx.textContent = "Đang hỏi về: " + btn.dataset.name; } else { ctx.hidden = true; }
@@ -38,12 +41,13 @@
   }
 
   document.querySelectorAll("[data-chat-open]").forEach(function (b) { b.addEventListener("click", function () { open(b); }); });
-  document.getElementById("chat-close").addEventListener("click", function () { box.hidden = true; });
+  document.getElementById("chat-close").addEventListener("click", function () { box.hidden = true; document.getElementById("chat-open").setAttribute("aria-expanded", "false"); document.getElementById("chat-open").focus(); });
 
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     var msg = input.value.trim();
     if (!msg) return;
+    if (intro) intro.hidden = true;
     input.value = "";
     add(msg, "me");
     var wait = add("Đang trả lời...", "bot");
@@ -54,5 +58,11 @@
     }).then(function (r) { return r.json(); })
       .then(function (d) { wait.textContent = d.answer || d.error || "Có lỗi, vui lòng thử lại."; })
       .catch(function () { wait.textContent = "Hiện chatbot tạm thời chưa tư vấn được."; });
+  });
+  box.querySelectorAll('[data-chat-prompt]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      input.value = button.dataset.chatPrompt;
+      form.requestSubmit();
+    });
   });
 })();

@@ -34,7 +34,7 @@
     {{ f.id }}{{ f.non_field_errors }}
     <label>Tên biến thể (màu, dung lượng...){{ f.name }}</label>{{ f.name.errors }}
     <label>Giá bán (đ, đã gồm VAT){{ f.price }}</label>{{ f.price.errors }}
-    <label>Số lượng tồn{{ f.stock }}</label>{{ f.stock.errors }}
+    <label>Số lượng tồn{{ f.stock }}</label>{{ f.stock.errors }}{% if f.stock.help_text %}<p class="shop">{{ f.stock.help_text }}</p>{% endif %}
     <p class="shop">Đóng gói một sản phẩm để tính cước GHN (gram, cm).</p>
     {% for field in f %}{% if field.name == 'weight' or field.name == 'length' or field.name == 'width' or field.name == 'height' %}<label>{{ field.label }}{{ field }}</label>{{ field.errors }}{% endif %}{% endfor %}
     {% if f.instance.pk %}<label class="check">{{ f.DELETE }} Xóa biến thể này</label>{% endif %}

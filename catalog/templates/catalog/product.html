@@ -39,7 +39,7 @@
       {% else %}
       <span class="pd__stat pd__stat--none">Chưa có đánh giá</span>
       {% endif %}
-      <span class="pd__stat pd__stat--shop">{% icon "store" %}{{ p.shop.name }}</span>
+      <a class="pd__stat pd__stat--shop" href="{% url 'shop_detail' p.shop_id %}">{% icon "store" %}{{ p.shop.name }}<span class="pd__shop-visit">Xem shop →</span></a>
     </div>
 
     <div class="pd__pricebox">

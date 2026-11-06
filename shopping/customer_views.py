@@ -44,7 +44,7 @@ def _page_query(request, drop=("trang",)):
 
 def _unpaid_online(qs):
     """Đơn còn hiệu lực, thuộc nhóm thanh toán trực tuyến và chưa thanh toán."""
-    return qs.filter(group__payment_method=OrderGroup.ONLINE, payment_status=Order.UNPAID).exclude(status=Order.CANCELED)
+    return qs.filter(group__payment_method=OrderGroup.ONLINE, payment_status=Order.UNPAID).exclude(status__in=(Order.CANCELED, Order.FAILED))
 
 
 # ===================================================================== UC08
@@ -79,7 +79,7 @@ def my_orders(request):
     page = Paginator(groups_qs, ORDERS_PER_PAGE).get_page(request.GET.get("trang"))
     for g in page.object_list:
         g.can_pay = g.payment_method == OrderGroup.ONLINE and any(
-            o.status != Order.CANCELED and o.payment_status == Order.UNPAID for o in g.shown)
+            o.status not in (Order.CANCELED, Order.FAILED) and o.payment_status == Order.UNPAID for o in g.shown)
         for o in g.shown:
             o.first_item = next(iter(o.items.all()), None)
 
@@ -90,6 +90,7 @@ def my_orders(request):
     return render(request, "shopping/my_orders.html", {
         "page": page, "groups": page.object_list, "tabs": tabs, "status": status, "q": q,
         "page_query": _page_query(request), "provider_label": payments.provider_label(),
+        "payment_provider": payments.provider(),
     })
 
 
@@ -99,9 +100,9 @@ def _steps(order, logs):
     for lg in logs:
         at.setdefault(lg.new_status, lg.at)
     label = dict(Order.STATUS)
-    if order.status == Order.CANCELED:
+    if order.status in (Order.CANCELED, Order.FAILED):
         steps = [{"code": s, "label": label[s], "state": "done", "at": at.get(s)} for s in FLOW if s in at]
-        steps.append({"code": Order.CANCELED, "label": label[Order.CANCELED], "state": "cancel", "at": at.get(Order.CANCELED)})
+        steps.append({"code": order.status, "label": label[order.status], "state": "cancel", "at": at.get(order.status)})
         return steps
     idx = FLOW.index(order.status)
     steps = []
@@ -131,17 +132,18 @@ def order_detail(request, pk):
     logs = list(order.status_logs.select_related("actor"))
     siblings = list(group.orders.exclude(pk=order.pk).select_related("shop").order_by("id"))
     online = group.payment_method == OrderGroup.ONLINE
-    unpaid_in_group = [o for o in [order] + siblings if o.status != Order.CANCELED and o.payment_status == Order.UNPAID] if online else []
+    unpaid_in_group = [o for o in [order] + siblings if o.status not in (Order.CANCELED, Order.FAILED) and o.payment_status == Order.UNPAID] if online else []
     txns = list(group.transactions.all()[:5]) if online else []
     pending = order.pending_cancel
     return render(request, "shopping/order_detail.html", {
         "o": order, "group": group, "items": items, "logs": logs, "steps": _steps(order, logs),
         "siblings": siblings, "requests": list(order.cancel_requests.all()), "pending": pending,
         "can_cancel": order.status in (Order.PENDING, Order.CONFIRMED) and not pending,
-        "can_pay": online and order.status != Order.CANCELED and order.payment_status == Order.UNPAID,
+        "can_pay": online and order.status not in (Order.CANCELED, Order.FAILED) and order.payment_status == Order.UNPAID,
         "pay_amount": sum(o.total for o in unpaid_in_group), "pay_orders": len(unpaid_in_group),
         "txns": txns, "online": online, "can_reorder": can_reorder,
         "provider_label": payments.provider_label(),
+        "payment_provider": payments.provider(),
     })
 
 

@@ -1,0 +1,44 @@
+{% extends "catalog/base.html" %}
+{% load shop_extras %}
+{% block title %}{{ shop.name }} - Shopphi{% endblock %}
+{% block bodyclass %}is-shop{% endblock %}
+{% block content %}
+<main class="shop-page">
+  <section class="shop-hero" aria-label="Thông tin gian hàng">
+    <div class="shop-hero__brand">
+      <span class="shop-hero__avatar">{% icon "store" %}</span>
+      <div><span class="shop-hero__eyebrow">GIAN HÀNG SHOPPHI</span><h1>{{ shop.name }}</h1>
+        {% if shop.description %}<p>{{ shop.description }}</p>{% else %}<p>Khám phá các sản phẩm đang bán tại {{ shop.name }}.</p>{% endif %}
+      </div>
+    </div>
+    <div class="shop-hero__facts">
+      <div><span>{% icon "package" %}Sản phẩm</span><strong>{{ shop.products.count }}</strong></div>
+      <div><span>{% icon "star" %}Đánh giá</span><strong>{% if rating_avg %}{{ rating_avg }} / 5{% else %}Chưa có{% endif %}</strong><small>{{ rating_count }} lượt</small></div>
+      <div><span>{% icon "clock" %}Tham gia</span><strong>{{ shop.created|date:"m/Y" }}</strong></div>
+      {% if shop.contact %}<div><span>{% icon "message" %}Liên hệ</span><strong>{{ shop.contact }}</strong></div>{% endif %}
+    </div>
+  </section>
+
+  <section class="shop-catalog" aria-labelledby="shop-products-title">
+    <div class="shop-catalog__top">
+      <div><span class="shop-hero__eyebrow">DANH MỤC CỬA HÀNG</span><h2 id="shop-products-title">Tất cả sản phẩm</h2></div>
+      <form class="shop-search" method="get" role="search">
+        <label class="sr" for="shop-query">Tìm trong shop</label>
+        <input id="shop-query" type="search" name="q" value="{{ q }}" placeholder="Tìm sản phẩm trong {{ shop.name }}…">
+        <button class="btn" type="submit">Tìm kiếm</button>
+      </form>
+    </div>
+    <div class="shop-catalog__meta"><span>{{ total }} sản phẩm</span>{% if q %}<span>Kết quả cho “{{ q }}”</span>{% endif %}</div>
+    {% if products %}
+      <div class="grid">
+        {% for p in products %}{% include "catalog/_card.html" %}{% endfor %}
+      </div>
+      {% if page.has_other_pages %}<nav class="shop-pagination" aria-label="Phân trang">
+        {% if page.has_previous %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}trang={{ page.previous_page_number }}">← Trang trước</a>{% endif %}
+        <span>Trang {{ page.number }} / {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}trang={{ page.next_page_number }}">Trang sau →</a>{% endif %}
+      </nav>{% endif %}
+    {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>{% if q %}Không tìm thấy sản phẩm phù hợp trong shop.{% else %}Shop chưa có sản phẩm đang bán.{% endif %}</p></div>{% endif %}
+  </section>
+</main>
+{% endblock %}

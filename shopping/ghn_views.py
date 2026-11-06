@@ -47,3 +47,32 @@ def webhook(request):
     except OrderError:
         return JsonResponse({"error": "GHN synchronization unavailable"}, status=503)
     return JsonResponse({"code": 200, "message": "Success"})
+
+
+@csrf_exempt
+@require_POST
+def demo_webhook(request):
+    if (not settings.DEBUG or not settings.GHN_ENABLED or not getattr(settings, "GHN_WEBHOOK_DEMO", False)
+            or settings.GHN_API_URL != "https://dev-online-gateway.ghn.vn"):
+        return JsonResponse({"error": "Demo webhook is disabled"}, status=404)
+    secret = settings.GHN_WEBHOOK_SECRET
+    if not secret or not hmac.compare_digest(request.headers.get("X-GHN-Secret", ""), secret):
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+    try:
+        if len(request.body) > 65536:
+            raise ValueError
+        payload = json.loads(request.body)
+        if not isinstance(payload, dict):
+            raise ValueError
+        code, status = payload.get("OrderCode"), payload.get("Status")
+        if (not isinstance(code, str) or not code or len(code) > 60
+                or not isinstance(status, str) or len(status) > 40):
+            raise ValueError
+    except (ValueError, UnicodeError):
+        return JsonResponse({"error": "Invalid payload"}, status=400)
+    try:
+        order = shipping.simulate_demo_status(code, status)
+    except OrderError as exc:
+        return JsonResponse({"error": str(exc)}, status=400)
+    return JsonResponse({"code": 200, "message": "Demo status applied", "order_status": order.status,
+                         "ghn_status": order.ghn_status})

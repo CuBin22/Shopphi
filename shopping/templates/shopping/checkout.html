@@ -28,19 +28,25 @@
         <label class="co-field">Số điện thoại
           <input name="phone" value="{{ info.phone }}" inputmode="tel" autocomplete="tel" required>
         </label>
-        <label class="co-field co-field--full">Địa chỉ nhận hàng
-          <input name="address" value="{{ info.address }}" autocomplete="street-address" placeholder="Số nhà, đường, phường xã, quận huyện, tỉnh thành" required>
+        <label class="co-field co-field--full">Số nhà, tên đường
+          <input name="address" value="{{ info.address }}" autocomplete="street-address" placeholder="Ví dụ: 12 Nguyễn Huệ" required>
         </label>
       </div>
       {% if ghn_enabled %}
-      <div class="co-grid" id="ghn-address" data-province="{{ info.province_id }}" data-district="{{ info.district_id }}" data-ward="{{ info.ward_code }}">
-        <label class="co-field">Tỉnh/thành (danh mục GHN)<select id="ghn-province" name="province_id" required><option value="">Chọn tỉnh/thành</option></select></label>
-        <label class="co-field">Quận/huyện<select id="ghn-district" name="district_id" required><option value="">Chọn quận/huyện</option></select></label>
-        <label class="co-field">Phường/xã<select id="ghn-ward" name="ward_code" required><option value="">Chọn phường/xã</option></select></label>
+      <div class="co-grid ghn-address" data-province="{{ info.province_id }}" data-district="{{ info.district_id }}" data-ward="{{ info.ward_code }}">
+        <label class="co-field">Tỉnh/thành
+          <select name="province_id" id="ghn-province" required><option value="">Đang tải tỉnh/thành…</option></select>
+        </label>
+        <label class="co-field">Quận/huyện
+          <select name="district_id" id="ghn-district" required disabled><option value="">Chọn tỉnh/thành trước</option></select>
+        </label>
+        <label class="co-field co-field--full">Phường/xã
+          <select name="ward_code" id="ghn-ward" required disabled><option value="">Chọn quận/huyện trước</option></select>
+        </label>
       </div>
-      <p id="ghn-address-error" class="co-msg co-msg--err" role="alert"></p>
-      <p class="co-hint">Chọn địa chỉ theo danh mục GHN để tính cước.</p>
-      <button class="btn btn--ghost" name="action" value="apply" type="submit">Tính phí GHN</button>
+      <p class="co-hint">Chọn đủ tỉnh/thành, quận/huyện, phường/xã và nhập địa chỉ; hệ thống sẽ tự tính phí GHN.</p>
+      <p id="ghn-address-status" class="co-hint" role="status" aria-live="polite"></p>
+      <p id="ghn-address-error" class="co-msg co-msg--err" role="alert" hidden></p>
       {% if shipping_error %}<p class="co-msg co-msg--err" role="alert">{{ shipping_error }}</p>{% endif %}
       {% endif %}
       <label class="co-check"><input type="checkbox" name="save_default" value="1" {% if save_default %}checked{% endif %}><span>Lưu làm địa chỉ nhận hàng mặc định</span></label>
@@ -81,7 +87,7 @@
 
     {% for p in co.parts %}
     <section class="co-card co-shop" aria-labelledby="co-shop-{{ p.shop.pk }}">
-      <h2 id="co-shop-{{ p.shop.pk }}"><span class="co-card__ico">{% icon "store" %}</span>{{ p.shop.name }}<span class="co-tag">Đơn {{ forloop.counter }}</span></h2>
+      <h2 id="co-shop-{{ p.shop.pk }}"><span class="co-card__ico">{% icon "store" %}</span><a href="{% url 'shop_detail' p.shop.pk %}">{{ p.shop.name }}</a><span class="co-tag">Đơn {{ forloop.counter }}</span></h2>
       <ul class="co-items">
         {% for r in p.rows %}
         <li class="co-item">
@@ -101,7 +107,7 @@
       <dl class="co-sum">
         <div><dt>Tạm tính</dt><dd>{{ p.subtotal|vnd }}</dd></div>
         <div><dt>Giảm giá</dt><dd>{% if p.discount %}- {{ p.discount|vnd }}{% else %}0 đ{% endif %}</dd></div>
-        <div><dt>Phí vận chuyển</dt><dd>{% if shipping_error %}Chưa tính{% elif p.shipping %}{{ p.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
+        <div><dt>Phí vận chuyển</dt><dd>{% if shipping_error or not shipping_ready %}Chưa tính{% elif p.shipping %}{{ p.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
         <div class="co-sum__total"><dt>Tổng đơn</dt><dd>{{ p.total|vnd }}</dd></div>
       </dl>
     </section>
@@ -114,10 +120,10 @@
       <dl class="co-total__rows">
         <div><dt>Tạm tính</dt><dd>{{ co.subtotal|vnd }}</dd></div>
         <div><dt>Giảm giá</dt><dd>{% if co.discount %}- {{ co.discount|vnd }}{% else %}0 đ{% endif %}</dd></div>
-        <div><dt>Phí vận chuyển</dt><dd>{% if shipping_error %}Chưa tính{% elif co.shipping %}{{ co.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
+        <div><dt>Phí vận chuyển</dt><dd>{% if shipping_error or not shipping_ready %}Chưa tính{% elif co.shipping %}{{ co.shipping|vnd }}{% else %}Miễn phí{% endif %}</dd></div>
       </dl>
       <p class="co-total__grand"><span>Tổng thanh toán</span><strong>{{ co.total|vnd }}</strong></p>
-      <button class="btn btn--lg btn--block co-total__cta" name="action" value="place" type="submit" {% if shipping_error %}disabled{% endif %}>Đặt hàng</button>
+      <button class="btn btn--lg btn--block co-total__cta" name="action" value="place" type="submit" {% if shipping_error or not shipping_ready %}disabled{% endif %}>Đặt hàng</button>
       <ul class="co-trust">
         <li>{% icon "lock" %}Không lưu thông tin thẻ của bạn</li>
         <li>{% icon "clock" %}Thanh toán trực tuyến được giữ kho {{ hold_minutes }} phút</li>
@@ -128,44 +134,109 @@
 </form>
 {% if ghn_enabled %}
 <script>
-(async function () {
-  const box = document.getElementById('ghn-address');
-  const province = document.getElementById('ghn-province'), district = document.getElementById('ghn-district'), ward = document.getElementById('ghn-ward');
-  const error = document.getElementById('ghn-address-error');
-  const form = box.closest('form'), place = form.querySelector('[value="place"]');
-  const base = "{% url 'ghn_addresses' 'province' %}".replace('province/', '');
-  let revision = 0;
-  function reset(select, label) { select.replaceChildren(new Option(label, '')); }
-  function invalidate() { place.disabled = true; form.elements.shipping_quote.value = ''; }
-  async function fill(select, kind, parent, selected, version) {
-    const response = await fetch(base + kind + '/?parent=' + encodeURIComponent(parent));
-    const body = await response.json();
-    if (version !== revision) return false;
-    if (!response.ok) throw new Error(body.error || 'Không tải được địa chỉ GHN.');
-    const keys = {province: ['ProvinceID', 'ProvinceName'], district: ['DistrictID', 'DistrictName'], ward: ['WardCode', 'WardName']}[kind];
-    for (const row of body.data) select.add(new Option(row[keys[1]], row[keys[0]]));
-    select.value = selected || '';
-    error.textContent = '';
-    return true;
-  }
+(() => {
+  const root = document.querySelector('.ghn-address');
+  if (!root) return;
+  const province = root.querySelector('#ghn-province');
+  const district = root.querySelector('#ghn-district');
+  const ward = root.querySelector('#ghn-ward');
+  const form = root.closest('form');
+  const place = form.querySelector('[name="action"][value="place"]');
+  const errorBox = document.getElementById('ghn-address-error');
+  const statusBox = document.getElementById('ghn-address-status');
+  const receiverName = form.elements.name;
+  const receiverPhone = form.elements.phone;
+  const streetAddress = form.elements.address;
+  const apply = form.querySelector('[name="action"][value="apply"]');
+  const base = "{% url 'ghn_addresses' 'province' %}".replace(/province\/$/, '');
+  let quoteTimer;
+  let quotePending = false;
+  const invalidate = () => {
+    place.disabled = true;
+    form.elements.shipping_quote.value = '';
+  };
+  const scheduleQuote = (delay = 450) => {
+    clearTimeout(quoteTimer);
+    invalidate();
+    if (!province.value || !district.value || !ward.value ||
+        !receiverName.value.trim() || !receiverPhone.value.trim() || !streetAddress.value.trim() || quotePending) return;
+    quoteTimer = setTimeout(() => {
+      quotePending = true;
+      statusBox.textContent = 'Đang tự tính phí vận chuyển…';
+      form.requestSubmit(apply);
+    }, delay);
+  };
+  const options = (select, rows, valueKey, labelKey, placeholder, selected='') => {
+    select.replaceChildren(new Option(placeholder, ''));
+    rows.forEach(row => {
+      const value = String(row[valueKey] ?? '');
+      const label = row[labelKey] || '';
+      if (value) select.add(new Option(label, value, false, value === String(selected)));
+    });
+  };
+  const load = async (kind, parent='') => {
+    const url = new URL(`${base}${kind}/`, window.location.origin);
+    if (parent) url.searchParams.set('parent', parent);
+    const response = await fetch(url, {credentials: 'same-origin'});
+    const result = await response.json();
+    if (!response.ok || !Array.isArray(result.data)) throw new Error(result.error || 'Không tải được danh mục GHN.');
+    return result.data;
+  };
+  const fail = message => {
+    province.replaceChildren(new Option('Không tải được tỉnh/thành', ''));
+    errorBox.textContent = message;
+    errorBox.hidden = false;
+  };
+  (async () => {
+    try {
+      const provinces = await load('province');
+      errorBox.textContent = '';
+      options(province, provinces, 'ProvinceID', 'ProvinceName', 'Chọn tỉnh/thành', root.dataset.province);
+      if (!province.value) return;
+      const districts = await load('district', province.value);
+      options(district, districts, 'DistrictID', 'DistrictName', 'Chọn quận/huyện', root.dataset.district);
+      district.disabled = false;
+      if (!district.value) return;
+      const wards = await load('ward', district.value);
+      options(ward, wards, 'WardCode', 'WardName', 'Chọn phường/xã', root.dataset.ward);
+      ward.disabled = false;
+      if (!{{ shipping_ready|yesno:"true,false" }} && !{{ shipping_error|yesno:"true,false" }}) scheduleQuote(0);
+    } catch (error) { fail(error.message); }
+  })();
   province.addEventListener('change', async () => {
-    const version = ++revision; invalidate(); reset(district, 'Chọn quận/huyện'); reset(ward, 'Chọn phường/xã');
-    try { if (province.value) await fill(district, 'district', province.value, '', version); }
-    catch (e) { error.textContent = e.message; }
+    invalidate();
+    statusBox.textContent = '';
+    district.disabled = ward.disabled = true;
+    options(district, [], '', '', 'Đang tải quận/huyện…');
+    options(ward, [], '', '', 'Chọn quận/huyện trước');
+    if (!province.value) return;
+    try {
+      options(district, await load('district', province.value), 'DistrictID', 'DistrictName', 'Chọn quận/huyện');
+      district.disabled = false;
+    } catch (error) { fail(error.message); }
   });
   district.addEventListener('change', async () => {
-    const version = ++revision; invalidate(); reset(ward, 'Chọn phường/xã');
-    try { if (district.value) await fill(ward, 'ward', district.value, '', version); }
-    catch (e) { error.textContent = e.message; }
+    invalidate();
+    statusBox.textContent = '';
+    ward.disabled = true;
+    options(ward, [], '', '', 'Đang tải phường/xã…');
+    if (!district.value) return;
+    try {
+      options(ward, await load('ward', district.value), 'WardCode', 'WardName', 'Chọn phường/xã');
+      ward.disabled = false;
+    } catch (error) { fail(error.message); }
   });
-  form.addEventListener('input', invalidate);
-  form.addEventListener('change', invalidate);
-  try {
-    const version = revision;
-    if (!await fill(province, 'province', '', box.dataset.province, version)) return;
-    if (province.value && !await fill(district, 'district', province.value, box.dataset.district, version)) return;
-    if (district.value) await fill(ward, 'ward', district.value, box.dataset.ward, version);
-  } catch (e) { error.textContent = e.message; invalidate(); }
+  ward.addEventListener('change', () => {
+    errorBox.hidden = true;
+    errorBox.textContent = '';
+    scheduleQuote();
+  });
+  [receiverName, receiverPhone, streetAddress].forEach(input => {
+    input.addEventListener('input', () => scheduleQuote());
+  });
+  form.querySelectorAll('[name="payment_method"]').forEach(input => {
+    input.addEventListener('change', () => scheduleQuote(0));
+  });
 })();
 </script>
 {% endif %}

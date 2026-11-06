@@ -14,7 +14,6 @@
   <p class="row"><strong>Tổng</strong><strong>{{ o.total|vnd }}</strong></p>
   <p class="shop">{% icon "map-pin" %}Giao tới: {{ o.group.recipient_name }}, {{ o.group.recipient_phone }}, {{ o.group.address }} ({{ o.group.get_payment_method_display }})</p>
   {% if o.tracking_code %}<p class="shop">{% icon "truck" %}{{ o.carrier }} - {{ o.tracking_code }}</p>{% endif %}
-  {% if o.ghn_status %}<p>Trạng thái GHN: {{ o.ghn_status }}</p><form method="post">{% csrf_token %}<button class="btn btn--ghost" name="action" value="ghn_sync">Đồng bộ GHN</button></form>{% endif %}
   {% if o.ghn_creation_pending %}<p class="warn">Chưa xác định được kết quả tạo vận đơn. Bấm Xác nhận đơn lần nữa để lấy lại mã GHN; đơn chưa thể hủy trong lúc này.</p>{% endif %}
   {% if o.status == 'DA_HUY' %}<p class="warn">Đã hủy: {{ o.cancel_reason }}</p>{% endif %}
 </section>

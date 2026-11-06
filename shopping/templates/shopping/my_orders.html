@@ -32,7 +32,7 @@
   </div>
   {% endfor %}
   {% if g.can_pay %}
-  <form method="post" action="{% url 'pay_group' g.pk %}" target="_blank" rel="noopener" data-pay="{{ g.pk }}" data-status-url="{% url 'payment_status' g.pk %}" class="actions">{% csrf_token %}
+  <form method="post" action="{% url 'pay_group' g.pk %}"{% if payment_provider == 'zalopay' %} target="_blank" rel="noopener" data-pay="{{ g.pk }}" data-status-url="{% url 'payment_status' g.pk %}"{% endif %} class="actions">{% csrf_token %}
     <button class="btn btn--small" type="submit">{% icon "credit-card" %}Thanh toán ({{ provider_label }})</button>
     {% if g.hold_until %}<span class="shop">Hạn giữ kho: {{ g.hold_until|date:"H:i d/m/Y" }}</span>{% endif %}
   </form>

@@ -31,8 +31,17 @@ _load_dotenv(BASE_DIR / ".env")        # chứa EMAIL_HOST_USER / EMAIL_HOST_PAS
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-hay-doi-khi-trien-khai")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".ngrok-free.app"]
-CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app"]   # chỉ dùng khi demo qua ngrok (IPN của VNPay)
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".ngrok-free.app", ".ngrok-free.dev"]
+CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app", "https://*.ngrok-free.dev"]
+if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
+    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+    CSRF_TRUSTED_ORIGINS.append(os.environ.get("RENDER_EXTERNAL_URL", "https://" + os.environ["RENDER_EXTERNAL_HOSTNAME"]))
+ALLOWED_HOSTS += [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if host.strip()]
+CSRF_TRUSTED_ORIGINS += [origin.strip() for origin in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+if os.environ.get("RENDER") == "true":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -57,6 +66,8 @@ MIDDLEWARE = [
     "accounts.middleware.IdleTimeoutMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+if os.environ.get("RENDER") == "true":
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
 ROOT_URLCONF = "Shopphi.urls"
 
@@ -89,6 +100,8 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
+if os.environ.get("DB_SSLMODE") or DATABASES["default"]["HOST"].endswith(".neon.tech"):
+    DATABASES["default"]["OPTIONS"] = {"sslmode": os.environ.get("DB_SSLMODE", "require")}
 
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
@@ -101,16 +114,38 @@ TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+if os.environ.get("RENDER") == "true":
+    STORAGES["staticfiles"] = {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"}
+if os.environ.get("AWS_ENDPOINT_URL_S3"):
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": os.environ.get("AWS_STORAGE_BUCKET_NAME", "shopphi-products"),
+            "endpoint_url": os.environ["AWS_ENDPOINT_URL_S3"],
+            "region_name": os.environ.get("AWS_REGION", "ap-southeast-1"),
+            "access_key": os.environ.get("AWS_ACCESS_KEY_ID", ""),
+            "secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY", ""),
+            "addressing_style": "path",
+            "querystring_auth": False,
+            "file_overwrite": False,
+        },
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---- Đăng nhập, phiên, chatbot ----
 LOGIN_URL = "login"
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14      # phiên ẩn danh giữ 14 ngày
 IDLE_TIMEOUT_SECONDS = 30 * 60              # phiên đăng nhập hết hạn sau 30 phút không hoạt động (QĐ2)
-CHATBOT_MODEL = os.environ.get("CHATBOT_MODEL", "claude-sonnet-5-5")   # dùng khi có ANTHROPIC_API_KEY
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_EMBEDDING_MODEL = os.environ.get("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
 
 # ---- Thanh toán Sandbox (UC07) ----
 # Khóa ký kết quả cổng thanh toán giả lập. Khi triển khai hãy đặt biến môi trường PAYMENT_SANDBOX_SECRET.
@@ -185,3 +220,4 @@ GHN_SHOP_ID = int(os.environ.get("GHN_SHOP_ID", "0") or "0")  # kho dùng để 
 GHN_API_URL = os.environ.get("GHN_API_URL", "https://dev-online-gateway.ghn.vn").rstrip("/")
 GHN_TIMEOUT = int(os.environ.get("GHN_TIMEOUT", "10"))
 GHN_WEBHOOK_SECRET = os.environ.get("GHN_WEBHOOK_SECRET", "")
+GHN_WEBHOOK_DEMO = os.environ.get("GHN_WEBHOOK_DEMO", "0") == "1"

@@ -62,6 +62,29 @@ python manage.py runserver
 Mở http://127.0.0.1:8000/ . Chưa có database thì tạo trước (pgAdmin hoặc `CREATE DATABASE "Shopphi" ENCODING 'UTF8';`).
 Nếu bạn đã chạy bản trước: chỉ cần `python manage.py migrate` (migration `catalog/0003` thêm bảng nhật ký quản trị, `shopping/0002` thêm hạn giữ kho và bảng giao dịch thanh toán; giữ nguyên dữ liệu cũ).
 
+## Chạy bằng Docker
+
+Cấu hình này dành cho chạy local/demo. Cần cài Docker Desktop, sau đó chạy tại thư mục dự án:
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+docker compose up --build
+```
+
+Mở http://localhost:8000/. Django tự chạy migration khi khởi động. PostgreSQL được lưu trong volume `postgres_data_v18`, ảnh tải lên nằm trong thư mục `media/`. Tạo tài khoản quản trị bằng `docker compose exec web python manage.py createsuperuser`.
+
+Dừng bằng `Ctrl+C`, hoặc chạy `docker compose down`. Lệnh `docker compose down -v` sẽ xóa cả dữ liệu PostgreSQL.
+
+Để nhập dữ liệu đã xuất thành `shopphi.dump` từ PostgreSQL 18, chạy:
+
+```powershell
+docker compose up -d --build
+docker compose stop web
+docker compose cp .\shopphi.dump db:/tmp/shopphi.dump
+docker compose exec db pg_restore -U shopphi -d shopphi --no-owner --no-privileges --clean --if-exists /tmp/shopphi.dump
+docker compose start web
+```
+
 ### Sử dụng dữ liệu thật
 
 Đăng ký tài khoản và gian hàng của bạn, thêm sản phẩm và tải ảnh thật trong Kênh quản lý. Tạo quản trị viên bằng `python manage.py createsuperuser`. Các công cụ nạp dữ liệu và tạo ảnh demo đã được gỡ. Không chạy lệnh đặt lại dữ liệu khi sử dụng dữ liệu thật.
@@ -215,8 +238,7 @@ Khóa ký cổng Sandbox đọc từ biến môi trường `PAYMENT_SANDBOX_SECR
 
 Tác vụ theo hạn (tự chấp nhận yêu cầu hủy sau 24 giờ, tự hoàn thành đơn sau 7 ngày kể từ Đang giao) chạy lười khi mở trang đơn hàng; ngoài ra có thể chạy `python manage.py process_timeouts --loop 60`.
 
-Chatbot: không có khóa API thì chạy chế độ **offline** (soạn câu trả lời từ dữ liệu trong DB). Có LLM thật thì đặt biến môi trường
-`ANTHROPIC_API_KEY` (và tùy chọn `CHATBOT_MODEL`) trước khi chạy `runserver`. Khóa không nằm trong mã front-end.
+Chatbot dùng RAG: truy xuất sản phẩm đang bán bằng tìm kiếm hybrid từ khóa và Gemini Embeddings, lấy giá/tồn kho mới nhất và trạng thái đơn trực tiếp từ PostgreSQL, rồi đưa ngữ cảnh liên quan cho Gemini tạo câu trả lời. Embedding sản phẩm được lưu trong PostgreSQL và tự làm mới khi nội dung sản phẩm đổi. Khi thiếu key hoặc Gemini lỗi, chatbot quay về tìm kiếm từ khóa và trả lời offline. Để bật Gemini, điền `GEMINI_API_KEY` cùng tùy chọn `GEMINI_MODEL` và `GEMINI_EMBEDDING_MODEL` trong `.env`, sau đó khởi động lại dịch vụ web. Khóa chỉ nằm ở máy chủ, không đưa ra trình duyệt.
 
 ## 2. Quá trình làm
 

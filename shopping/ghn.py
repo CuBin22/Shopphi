@@ -1,11 +1,14 @@
 """GHN HTTP + báo giá. Token chỉ ở backend, không tự retry thao tác ghi."""
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
 
 from django.conf import settings
 from django.core.cache import cache
+
+from catalog.text import khong_dau
 
 from .services import OrderError
 
@@ -77,10 +80,7 @@ def addresses(kind, parent=""):
     key = f"ghn:{settings.GHN_API_URL}:{kind}:{parent}"
     data = cache.get(key)
     if data is None:
-        from catalog.models import Shop
-        shop_id = settings.GHN_SHOP_ID or Shop.objects.filter(ghn_shop_id__gt=0).values_list("ghn_shop_id", flat=True).first()
-        if not shop_id:
-            raise GHNError("Chưa cấu hình kho GHN để tra địa chỉ.")
+        shop_id = address_shop_id()
         data = request("master-data/" + kind, payload, shop_id=shop_id, method="GET") or []
         if not isinstance(data, list):
             raise GHNError("Danh mục địa chỉ GHN không hợp lệ.")
@@ -88,7 +88,79 @@ def addresses(kind, parent=""):
     return data
 
 
-def destination(info):
+def address_shop_id():
+    from catalog.models import Shop
+    shop_id = settings.GHN_SHOP_ID or Shop.objects.filter(ghn_shop_id__gt=0).values_list("ghn_shop_id", flat=True).first()
+    if not shop_id:
+        raise GHNError("Chưa cấu hình kho GHN để tra địa chỉ.")
+    return shop_id
+
+
+def new_addresses(kind, parent=""):
+    if kind not in ("province", "ward"):
+        raise GHNError("Loại địa chỉ GHN không hợp lệ.")
+    payload = {"offset": 0, "limit": 200}
+    path = "v3/master-data/province/all"
+    if kind == "ward":
+        try:
+            parent = int(parent)
+            if parent <= 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            raise GHNError("Không xác định được tỉnh/thành trong địa chỉ.") from None
+        path = "v3/master-data/ward/all-by-province-id"
+        payload["province_id"] = parent
+    key = f"ghn:{settings.GHN_API_URL}:new:{kind}:{parent}"
+    data = cache.get(key)
+    if data is None:
+        data = request(path, payload, shop_id=address_shop_id(), method="GET") or []
+        if not isinstance(data, list):
+            raise GHNError("Danh mục địa chỉ GHN không hợp lệ.")
+        cache.set(key, data, 3600)
+    return data
+
+
+def _address_key(value):
+    value = khong_dau(value).lower()
+    return " " + re.sub(r"[^a-z0-9]+", " ", value).strip() + " "
+
+
+def _match_address_unit(text, rows, label, before=None):
+    matches = []
+    for row in rows:
+        aliases = [row.get("name", ""), *(row.get("extension_names") or [])]
+        for alias in aliases:
+            key = _address_key(alias)
+            if len(key.strip()) < 3:
+                continue
+            start = text.find(key)
+            while start >= 0:
+                matches.append((start + len(key), len(key), start, row))
+                start = text.find(key, start + 1)
+    if not matches:
+        raise GHNError(f"Không nhận diện được {label} từ địa chỉ. Hãy ghi rõ tên phường/xã và tỉnh/thành.")
+    if before is not None:
+        earlier = [match for match in matches if match[0] <= before]
+        if earlier:
+            matches = earlier
+    latest = max(end for end, _, _, _ in matches)
+    matches = [match for match in matches if match[0] == latest]
+    longest = max(length for _, length, _, _ in matches)
+    best = {str(row.get("_id")): (row, start)
+            for end, length, start, row in matches if length == longest}
+    if len(best) != 1:
+        raise GHNError(f"Địa chỉ khớp nhiều {label}. Hãy bổ sung tên phường/xã hoặc tỉnh/thành đầy đủ.")
+    return next(iter(best.values()))
+
+
+def _new_destination(address):
+    text = _address_key(address)
+    province, province_start = _match_address_unit(text, new_addresses("province"), "tỉnh/thành")
+    ward, _ = _match_address_unit(text, new_addresses("ward", province["_id"]), "phường/xã", before=province_start)
+    return {"to_ward_name": ward["name"], "to_province_name": province["name"], "is_new_to_address": True}
+
+
+def _legacy_destination(info):
     try:
         province = next(p for p in addresses("province") if str(p["ProvinceID"]) == str(info.get("province_id")))
         district = next(d for d in addresses("district", province["ProvinceID"])
@@ -100,6 +172,12 @@ def destination(info):
     return {"to_district_id": district["DistrictID"], "to_ward_code": str(ward["WardCode"]),
             "to_province_name": province["ProvinceName"], "to_district_name": district["DistrictName"],
             "to_ward_name": ward["WardName"], "is_new_to_address": False}
+
+
+def destination(info):
+    if isinstance(info, dict) and any(info.get(key) for key in ("province_id", "district_id", "ward_code")):
+        return _legacy_destination(info)
+    return _new_destination(info.get("address", "") if isinstance(info, dict) else info)
 
 
 def package(lines):
@@ -122,6 +200,7 @@ def package(lines):
 
 def quote_checkout(checkout, info, method):
     dest = destination(info)
+    legacy_address = not dest.get("is_new_to_address")
     for part in checkout.parts:
         if not part.shop.ghn_shop_id:
             raise GHNError(f"Gian hàng {part.shop.name} chưa được cấu hình kho GHN.")
@@ -130,12 +209,19 @@ def quote_checkout(checkout, info, method):
         if value > 5000000:
             raise GHNError("Giá trị hàng vượt mức khai giá GHN 5.000.000đ; vui lòng tách đơn.")
         payload = {**dest, **parcel, "insurance_value": value}
+        if not legacy_address:
+            payload.update(to_name=info["name"], to_phone=info["phone"], to_address=info["address"],
+                           payment_type_id=1, required_note="CHOXEMHANGKHONGTHU")
         # COD bao gồm cước; lặp báo giá đến khi mức COD và cước nhất quán.
         fee = 0
         for _ in range(5):
-            payload["cod_value"] = value + fee if method == "COD" else 0
-            data = request("v2/shipping-order/fee", payload, shop_id=part.shop.ghn_shop_id)
-            quoted = data.get("total") if isinstance(data, dict) else None
+            if legacy_address:
+                payload["cod_value"] = value + fee if method == "COD" else 0
+            else:
+                payload["cod_amount"] = value + fee if method == "COD" else 0
+            endpoint = "v2/shipping-order/fee" if legacy_address else "v2/shipping-order/preview"
+            data = request(endpoint, payload, shop_id=part.shop.ghn_shop_id)
+            quoted = data.get("total", data.get("total_fee")) if isinstance(data, dict) else None
             if type(quoted) is not int or quoted < 0:
                 raise GHNError("GHN trả về phí vận chuyển không hợp lệ.")
             if quoted == fee or method != "COD":

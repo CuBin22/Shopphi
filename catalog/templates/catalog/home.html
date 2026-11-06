@@ -14,7 +14,7 @@
               <span class="eyebrow">SHOPPHI · KHÁM PHÁ MỖI NGÀY</span>
               <p class="spotlight__category">{{ p.category.name }}</p>
               <h2>{{ p.name }}</h2>
-              <p class="spotlight__shop">Từ gian hàng {{ p.shop.name }}</p>
+              <p class="spotlight__shop">Từ gian hàng <a href="{% url 'shop_detail' p.shop_id %}">{{ p.shop.name }}</a></p>
               <p class="spotlight__price">{{ p.price|vnd }}</p>
               <a class="spotlight__cta" href="{{ p.get_absolute_url }}">Khám phá ngay {% icon "chevron-right" %}</a>
             </div>
@@ -66,10 +66,14 @@
     {% for c in nav_categories %}<a href="{% url 'search' %}?danh_muc={{ c.slug }}"><span class="category-grid__icon">{% include "catalog/_glyph.html" with slug=c.slug %}</span><strong>{{ c.name }}</strong><span>Khám phá ngay →</span></a>{% empty %}<p class="empty">Các danh mục sẽ được cập nhật tại đây.</p>{% endfor %}
   </div>
 </section>
-<section class="block" aria-labelledby="h-goiy">
-  <div class="block__head">
-    <h2 id="h-goiy">GỢI Ý HÔM NAY</h2>
-    <p>{% if personal %}Dựa trên sản phẩm bạn đã xem và thêm vào giỏ{% else %}Sản phẩm được quan tâm nhiều trên sàn. Xem thêm vài sản phẩm để gợi ý khớp với bạn hơn.{% endif %}</p>
+<section class="block discovery" aria-labelledby="h-goiy">
+  <div class="discovery__head">
+    <div class="discovery__title">
+      <span class="discovery__eyebrow">KHÁM PHÁ DÀNH CHO BẠN</span>
+      <h2 id="h-goiy">Gợi ý hôm nay <span aria-hidden="true">✦</span></h2>
+      <p>{% if personal %}Dựa trên sản phẩm bạn đã xem, thêm vào giỏ và mua.{% else %}Những sản phẩm đang được quan tâm trên Shopphi. Khám phá thêm để gợi ý phù hợp hơn.{% endif %}</p>
+    </div>
+    <a class="discovery__all" href="{% url 'search' %}">Khám phá tất cả <span aria-hidden="true">→</span></a>
   </div>
   {% if recommended %}
   <div class="grid">

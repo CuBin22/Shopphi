@@ -6,7 +6,7 @@
 {% if shops %}
   {% for s in shops %}
   <section class="cartshop">
-    <h2>{% icon "store" %}{{ s.shop.name }}</h2>
+    <h2>{% icon "store" %}<a href="{% url 'shop_detail' s.shop.pk %}">{{ s.shop.name }}</a></h2>
     {% for l in s.lines %}
     <div class="line">
       <div class="tile tone-{{ l.v.product.pk|tone }} tile--thumb">{% if l.v.product.image %}<img class="tile__image" src="{{ l.v.product.image.url }}" alt="{{ l.v.product.name }}" loading="lazy">{% else %}{% include "catalog/_glyph.html" with slug=l.v.product.category.slug %}{% endif %}</div>

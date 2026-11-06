@@ -219,6 +219,36 @@ def _fallback(limit, exclude, category=None):
     return sorted(qs, key=lambda p: (rank.get(p.pk, 10**9), -p.pk))[:limit]
 
 
+def _interest_rank(actor, profile, exclude, limit):
+    """Recommend related catalog items even before collaborative data is available."""
+    history = BehaviorLog.objects.filter(Q(session_key=actor.session_key) | Q(user=actor.user) if actor.user else Q(session_key=actor.session_key))
+    searches = [khong_dau(term) for term in history.filter(type=BehaviorLog.SEARCH).order_by('-created', '-id')
+                .values_list('keyword', flat=True)[:5] if term]
+    recent_ids = list(history.filter(product__isnull=False, type__in=WEIGHTS).order_by('-created', '-id')
+                      .values_list('product_id', flat=True)[:12])
+    seeds = {p.pk: p for p in Product.objects.filter(pk__in=recent_ids).select_related('category')}
+    if not searches and not seeds:
+        return []
+    ignored = {'san', 'pham', 'gia', 'duoi', 'tren', 'trieu', 'nghin', 'dong', 'mua', 'tim', 'kiem'}
+    terms = {word for phrase in searches for word in phrase.split() if word not in ignored and not word.isdigit()}
+    ranked = []
+    for product in _in_stock().exclude(pk__in=exclude):
+        title = khong_dau(f'{product.name} {product.brand} {product.tags}')
+        description = khong_dau(product.description[:1200])
+        score = 12 * len(terms & set(title.split())) + 3 * len(terms & set(description.split()))
+        for seed_id in set(recent_ids):
+            seed = seeds.get(seed_id)
+            if seed is None:
+                continue
+            weight = min(profile.get(seed_id, 1), WEIGHT_CAP)
+            seed_terms = set(khong_dau(f'{seed.name} {seed.brand} {seed.tags}').split()) - ignored
+            score += weight * len(set(title.split()) & seed_terms)
+        if score:
+            ranked.append((score, product))
+    ranked.sort(key=lambda row: (-row[0], -row[1].pk))
+    return [product for _, product in ranked[:limit]]
+
+
 def recommend(actor: Actor, current=None, limit=8):
     """Trả về (danh sách sản phẩm, có_cá_nhân_hóa).
 
@@ -226,16 +256,16 @@ def recommend(actor: Actor, current=None, limit=8):
     """
     profile = _profile(actor)
     exclude = set([current.pk]) if current else set()
-    products = []
+    products = _interest_rank(actor, profile, exclude, limit)
     if len(profile) >= MIN_PRODUCTS_FOR_PERSONAL:
         seeds = dict(profile)
         if current:
             seeds[current.pk] = seeds.get(current.pk, 0) + 4
         skip = {f"s{actor.session_key}"} | ({f"u{actor.user.pk}"} if actor.user else set())
         scores = _item_scores(seeds, skip)
-        ids = [p for p in sorted(scores, key=lambda p: -scores[p]) if p not in exclude and p not in profile]
+        ids = [p for p in sorted(scores, key=lambda p: -scores[p]) if p not in exclude and p not in {item.pk for item in products}]
         by_id = {p.pk: p for p in _in_stock(Q(pk__in=ids[: limit * 3]))}
-        products = [by_id[i] for i in ids if i in by_id][:limit]
+        products += [by_id[i] for i in ids if i in by_id][:limit - len(products)]
     personal = bool(products)
     if len(products) < limit:
         taken = exclude | {p.pk for p in products}

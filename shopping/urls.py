@@ -10,6 +10,7 @@ from . import ghn_views
 
 urlpatterns = [
     path("van-chuyen/ghn/dia-chi/<str:kind>/", ghn_views.addresses, name="ghn_addresses"),
+    path("van-chuyen/ghn/webhook/demo/", ghn_views.demo_webhook, name="ghn_demo_webhook"),
     path("van-chuyen/ghn/webhook/", ghn_views.webhook, name="ghn_webhook"),
     path("gio-hang/", v.cart, name="cart"),
     path("gio-hang/them/", v.cart_add, name="cart_add"),

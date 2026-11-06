@@ -2,7 +2,7 @@
 import math
 from datetime import date, timedelta
 
-from django.db.models import Count, F, Q, Sum
+from django.db.models import Count, F, Q, Sum, OuterRef, Subquery
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
@@ -27,8 +27,7 @@ def stats(d_from: date, d_to: date, shops):
     validate_period(d_from, d_to)
     rows = []
     for shop in shops:
-        done = Order.objects.filter(shop=shop, status=Order.DONE, status_logs__new_status=Order.DONE,
-                                    status_logs__at__date__gte=d_from, status_logs__at__date__lte=d_to)
+        done = completed_orders().filter(shop=shop, completed_at__date__gte=d_from, completed_at__date__lte=d_to)
         agg = done.aggregate(n=Count("pk", distinct=True), sub=Sum("subtotal"), disc_s=Sum("shop_discount"),
                              disc_g=Sum("global_discount"))
         revenue = (agg["sub"] or 0) - (agg["disc_s"] or 0) - (agg["disc_g"] or 0)
@@ -49,16 +48,21 @@ def popular_keywords(limit=10):
     return list(Keyword.objects.filter(frequency__gt=0).order_by("-frequency")[:limit])
 
 
+def completed_orders():
+    first_completion = OrderStatusLog.objects.filter(order_id=OuterRef('pk'), new_status=Order.DONE).exclude(
+        old_status=Order.DONE).order_by('at', 'pk').values('at')[:1]
+    return Order.objects.filter(status=Order.DONE).annotate(completed_at=Subquery(first_completion))
+
+
 def daily_revenue(d_from: date, d_to: date, shop=None):
     """Doanh thu và số đơn hoàn thành theo từng ngày (giờ Việt Nam) trong kỳ; ngày không có đơn trả về 0."""
     validate_period(d_from, d_to)
-    qs = OrderStatusLog.objects.filter(new_status=Order.DONE, order__status=Order.DONE,
-                                       at__date__gte=d_from, at__date__lte=d_to)
+    qs = completed_orders().filter(completed_at__date__gte=d_from, completed_at__date__lte=d_to)
     if shop is not None:
-        qs = qs.filter(order__shop=shop)
-    rows = qs.annotate(d=TruncDate("at")).values("d").annotate(
-        rev=Sum(F("order__subtotal") - F("order__shop_discount") - F("order__global_discount")),
-        n=Count("order", distinct=True))
+        qs = qs.filter(shop=shop)
+    rows = qs.annotate(d=TruncDate("completed_at")).values("d").annotate(
+        rev=Sum(F("subtotal") - F("shop_discount") - F("global_discount")),
+        n=Count("pk"))
     by_day = {r["d"]: r for r in rows}
     out, d = [], d_from
     while d <= d_to:

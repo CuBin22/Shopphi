@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf" content="{{ csrf_token }}">
   <meta name="theme-color" content="#ee4d2d">
+  <link rel="icon" type="image/svg+xml" href="{% static 'catalog/img/shopphi-mark.svg' %}?v=2">
   <title>{% block title %}Shopphi - Sàn đa gian hàng{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'catalog/css/app.css' %}">
   <link rel="stylesheet" href="{% static 'catalog/css/storefront.css' %}">
@@ -21,7 +22,7 @@
   </div>
   <div class="wrap {% block headerwrap %}{% endblock %} top__row">
     <a class="brand" href="{% url 'home' %}" aria-label="Shopphi, về trang chủ">
-      <span class="brand__mark" aria-hidden="true">{% icon "store" %}</span>Shopphi
+      <span class="brand__mark" aria-hidden="true"><img src="{% static 'catalog/img/shopphi-mark.svg' %}?v=2" alt=""></span>Shopphi
     </a>
     {% block headersearch %}{% include "catalog/_search_form.html" with variant="compact" %}{% endblock %}
     <nav class="top__links" aria-label="Tài khoản">
@@ -138,18 +139,27 @@
 
 <div id="chat" class="chat" hidden data-url="{% url 'chatbot' %}" data-history="{% url 'chatbot_history' %}" role="dialog" aria-label="Trợ lý Shopphi">
   <div class="chat__head">
-    <span class="chat__ico" aria-hidden="true">{% icon "bot" %}</span>
-    <strong>Trợ lý Shopphi<small>Hỏi giá, tồn kho, thông số</small></strong>
+    <span class="chat__ico" aria-hidden="true"><img src="{% static 'catalog/img/phi-mascot.svg' %}" alt=""></span>
+    <strong>Phi • Trợ lý Shopphi<small>Hỏi giá, tồn kho, thông số</small></strong>
     <button type="button" id="chat-close" aria-label="Đóng khung chat">{% icon "x" %}</button>
   </div>
   <p class="chat__ctx" id="chat-ctx" hidden></p>
+  <div class="chat__intro" id="chat-intro">
+    <span class="chat__intro-label">GỢI Ý BẮT ĐẦU</span>
+    <p>Đặt câu hỏi theo nhu cầu của bạn</p>
+    <div class="chat__prompts">
+      <button type="button" data-chat-prompt="Gợi ý sản phẩm dưới 1 triệu đồng">Sản phẩm dưới 1 triệu</button>
+      <button type="button" data-chat-prompt="Có sản phẩm nào phù hợp để làm quà tặng?">Tìm quà tặng</button>
+      <button type="button" data-chat-prompt="Làm sao theo dõi đơn hàng của tôi?">Theo dõi đơn hàng</button>
+    </div>
+  </div>
   <div class="chat__log" id="chat-log" aria-live="polite"></div>
   <form class="chat__form" id="chat-form">
     <input id="chat-input" maxlength="300" placeholder="Nhập câu hỏi của bạn..." autocomplete="off" aria-label="Câu hỏi cho trợ lý">
     <button type="submit" aria-label="Gửi">{% icon "send" %}</button>
   </form>
 </div>
-<button type="button" class="chatfab" id="chat-open" data-chat-open>{% icon "message" %}<span>Hỏi chatbot</span></button>
+<button type="button" class="chatfab" id="chat-open" data-chat-open aria-label="Hỏi Phi, trợ lý Shopphi" aria-controls="chat" aria-expanded="false"><img class="chatfab__mascot" src="{% static 'catalog/img/phi-mascot.svg' %}" alt=""><span class="chatfab__label">Hỏi Phi</span></button>
 <script src="{% static 'catalog/js/app.js' %}" defer></script>
 <script src="{% static 'catalog/js/chat.js' %}" defer></script>
 <script src="{% static 'catalog/js/pay.js' %}" defer></script>

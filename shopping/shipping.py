@@ -51,8 +51,11 @@ def _confirm_order(user, order_id):
             return order
         snapshot = order.shipping_data
         payload = {k: v for k, v in snapshot.items() if k not in ("shop_id", "api_url")}
+        address_parts = [order.group.address, snapshot.get("to_ward_name"),
+                         snapshot.get("to_district_name"), snapshot.get("to_province_name")]
+        to_address = ", ".join(part.strip() for part in address_parts if isinstance(part, str) and part.strip())
         payload.update(to_name=order.group.recipient_name, to_phone=order.group.recipient_phone,
-                       to_address=order.group.address, payment_type_id=1,
+                       to_address=to_address, payment_type_id=1,
                        required_note="CHOXEMHANGKHONGTHU",
                        cod_amount=int(order.total) if order.group.payment_method == OrderGroup.COD else 0)
         try:
@@ -139,7 +142,58 @@ def sync_order(order_id):
         elif status == "cancel" and order.status == Order.CONFIRMED:
             services.cancel_order(order.pk, None, "GHN xác nhận hủy vận đơn", _ghn_verified=True)
         elif status in ("returned", "damage", "lost") and status != previous:
+            if order.status in (Order.CONFIRMED, Order.SHIPPING):
+                old = order.status
+                order.status = Order.FAILED
+                if order.payment_status == Order.PAID:
+                    order.payment_status = Order.REFUND_WAIT
+                order.save(update_fields=['status', 'payment_status'])
+                services._log(order, old, Order.FAILED, None, f'GHN: {status}; chờ kiểm tra hàng thực nhận')
+                services.notify(order.group.user, f'Đơn #{order.pk} giao thất bại. Gian hàng sẽ xử lý hàng và hoàn tiền nếu đã thanh toán.',
+                                f'/don-hang/{order.pk}/')
             services.notify(order.shop.owner, f"Đơn #{order.pk}: GHN {status}. Cần kiểm tra hàng và xử lý hoàn tiền.",
                             f"/quan-ly/don-hang/{order.pk}/")
         order.refresh_from_db()
+        return order
+
+
+def simulate_demo_status(order_code, status):
+    """Apply an allowed in-transit status locally for an isolated Staging demo."""
+    stages = ("picked", "delivered")
+    if status not in stages:
+        raise services.OrderError("Demo chỉ hỗ trợ hai trạng thái theo thứ tự: picked → delivered.")
+    with transaction.atomic():
+        order = Order.objects.select_for_update(of=("self",)).select_related("group__user", "shop__owner").filter(
+            carrier="GHN", tracking_code=order_code).exclude(shipping_data={}).first()
+        if not order:
+            raise services.OrderError("Không tìm thấy đơn GHN có mã vận đơn này.")
+        if order.status == Order.DONE and order.ghn_status == status == "delivered":
+            return order
+        if order.status not in (Order.CONFIRMED, Order.SHIPPING):
+            raise services.OrderError("Chỉ mô phỏng đơn GHN đã xác nhận hoặc đang giao.")
+        current = order.ghn_status
+        current_stage = -1 if current in ("", "ready_to_pick") else stages.index(current) if current in stages else None
+        if current_stage is None:
+            raise services.OrderError("Trạng thái GHN hiện tại không thuộc luồng demo hỗ trợ.")
+        if stages.index(status) < current_stage:
+            raise services.OrderError("Không thể chuyển lùi trạng thái demo.")
+        if status == order.ghn_status:
+            return order
+        if stages.index(status) != current_stage + 1:
+            raise services.OrderError("Hãy gửi trạng thái demo kế tiếp theo thứ tự picked → delivered.")
+
+        old_status = order.status
+        now = timezone.now()
+        order.ghn_status, order.ghn_updated_at = status, now
+        fields = ["ghn_status", "ghn_updated_at"]
+        if order.status == Order.CONFIRMED:
+            order.status, order.shipped_at = Order.SHIPPING, now
+            fields.extend(["status", "shipped_at"])
+        order.save(update_fields=fields)
+        if status == "delivered":
+            order = services.complete_order(order.pk, ghn=True)
+            return order
+        services._log(order, old_status, order.status, None, "GHN đã lấy hàng và bắt đầu vận chuyển.")
+        services.notify(order.group.user, f"GHN đã lấy hàng và bắt đầu vận chuyển đơn #{order.pk}.",
+                        f"/don-hang/{order.pk}/")
         return order

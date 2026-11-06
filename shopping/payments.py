@@ -95,7 +95,7 @@ def expire_overdue(now=None, group_id=None, reconcile=True) -> int:
 
 # ------------------------------------------------------------ tạo yêu cầu (FR11)
 def payable_orders(group):
-    return [o for o in Order.objects.filter(group=group).exclude(status=Order.CANCELED) if o.payment_status == Order.UNPAID]
+    return [o for o in Order.objects.filter(group=group).exclude(status__in=(Order.CANCELED, Order.FAILED)) if o.payment_status == Order.UNPAID]
 
 
 def create_payment(user, group_id, now=None) -> PaymentTransaction:
@@ -111,7 +111,7 @@ def create_payment(user, group_id, now=None) -> PaymentTransaction:
         group = OrderGroup.objects.select_for_update().get(pk=group_id)
         if group.payment_method != OrderGroup.ONLINE:
             raise PaymentError("Nhóm đơn này chọn thanh toán khi nhận hàng (COD), không cần thanh toán trực tuyến.")
-        unpaid = [o for o in Order.objects.select_for_update().filter(group=group).exclude(status=Order.CANCELED)
+        unpaid = [o for o in Order.objects.select_for_update().filter(group=group).exclude(status__in=(Order.CANCELED, Order.FAILED))
                   if o.payment_status == Order.UNPAID]
         if not unpaid:
             if group.hold_until and now > group.hold_until and Order.objects.filter(group=group, status=Order.CANCELED).exists():
@@ -164,7 +164,7 @@ def _apply(first, status, amount, group_id=None, now=None, zp_trans_id=None, pai
         txn.gateway_status = "SUCCESS"
         txn.processed_at = now
         orders = list(Order.objects.select_for_update(of=("self",)).select_related("shop__owner").filter(group_id=txn.group_id))
-        unpaid = [o for o in orders if o.status != Order.CANCELED and o.payment_status == Order.UNPAID]
+        unpaid = [o for o in orders if o.status not in (Order.CANCELED, Order.FAILED) and o.payment_status == Order.UNPAID]
         valid = txn.status == PaymentTransaction.PENDING and unpaid and sum(o.total for o in unpaid) == txn.amount
         if not valid:
             txn.status = PaymentTransaction.LATE

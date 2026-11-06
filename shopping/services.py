@@ -87,6 +87,7 @@ class ShopPart:
     shop: object
     lines: list
     subtotal: int
+    shipping_data: dict = field(default_factory=dict)
     coupon: object = None
     shop_discount: int = 0
     global_share: int = 0
@@ -153,9 +154,15 @@ def build_checkout(lines, global_code="", shop_codes=None, now=None) -> Checkout
             co.global_coupon = validate_coupon(gcode, Coupon.GLOBAL, total_sub, now=now)
             gd = calc_discount(co.global_coupon, total_sub)
             # phân bổ theo tỷ lệ tạm tính, làm tròn xuống đến đồng; phần dư cộng vào đơn có tạm tính lớn nhất
-            shares = [gd * p.subtotal // total_sub for p in parts]
-            biggest = max(range(len(parts)), key=lambda i: parts[i].subtotal)
-            shares[biggest] += gd - sum(shares)
+            balances = [p.subtotal - p.shop_discount for p in parts]
+            remaining = sum(balances)
+            gd = min(gd, remaining)
+            shares = [gd * balance // remaining if remaining else 0 for balance in balances]
+            remainder = gd - sum(shares)
+            for i, balance in enumerate(balances):
+                extra = min(remainder, balance - shares[i])
+                shares[i] += extra
+                remainder -= extra
             for p, sh in zip(parts, shares):
                 p.global_share = max(0, min(sh, p.subtotal - p.shop_discount))
         except OrderError as e:
@@ -231,7 +238,7 @@ def place_order(user, wanted, info, payment_method, global_code="", shop_codes=N
                 shop_discount=part.shop_discount, global_discount=part.global_share,
                 shipping_fee=part.shipping, total=part.total, created=now,
                 shipping_data=({**part.shipping_data, "client_order_code": "SP-" + uuid.uuid4().hex}
-                               if settings.GHN_ENABLED else {}))
+                               if part.shipping_data else {}))
             OrderItem.objects.bulk_create([
                 OrderItem(order=order, variant=l["v"], product_name=l["v"].product.name, variant_name=l["v"].name,
                           unit_price=l["v"].price, qty=l["qty"]) for l in part.lines])
@@ -448,6 +455,12 @@ def confirm_received(user, order_id):
     if order is None:
         raise OrderError("Không tìm thấy đơn hàng.")
     _check_customer(order, user)
+    if order.shipping_data:
+        if order.ghn_status != "delivered":
+            raise OrderError("Đơn GHN chỉ hoàn thành khi GHN xác nhận giao thành công.")
+        if order.status == Order.DONE:
+            return order
+        return complete_order(order_id, actor=user, ghn=True)
     return complete_order(order_id, actor=user)
 
 

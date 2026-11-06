@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
 
 from . import services
-from .models import BehaviorLog, Category, Product
+from .models import BehaviorLog, Category, Product, Shop
 
 
 PAGE_SIZE = 24
@@ -61,6 +61,23 @@ def search(request):
 def suggest(request):
     items = services.suggest_keywords(request.GET.get("q", ""))
     return JsonResponse({"suggestions": items})
+
+
+def shop_detail(request, pk):
+    shop = get_object_or_404(Shop, pk=pk, status=Shop.ACTIVE)
+    query = request.GET.get("q", "").strip()[:100]
+    products = services.annotated(Product.objects.sellable().filter(shop=shop))
+    if query:
+        products = products.filter(search_text__contains=services.khong_dau(query))
+    paginator = Paginator(products, PAGE_SIZE)
+    page = paginator.get_page(request.GET.get("trang"))
+    from shopping.models import Review
+    rating = Review.objects.filter(product__shop=shop).aggregate(avg=Avg("rating"), n=Count("id"))
+    return render(request, "catalog/shop.html", {
+        "shop": shop, "products": page.object_list, "page": page, "total": paginator.count,
+        "q": query, "rating_avg": round(rating["avg"], 1) if rating["avg"] else None,
+        "rating_count": rating["n"],
+    })
 
 
 def product_detail(request, slug):

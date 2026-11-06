@@ -39,7 +39,7 @@
   {% if o.status == 'HOAN_THANH' %}
     {% if i.review %}<div class="review"><p class="review__head">{% rating_icons i.review.rating %}<span class="shop">Bạn đã đánh giá ngày {{ i.review.created|date:"d/m/Y" }}</span></p>{% if i.review.comment %}<p>{{ i.review.comment }}</p>{% endif %}</div>
     {% else %}
-    <form method="post" action="{% url 'review_create' o.pk i.product.pk %}" class="reviewform">{% csrf_token %}
+    <form method="post" action="{% url 'review_create' o.pk i.product.pk %}" class="reviewform order-reviewform">{% csrf_token %}
       <label>Số sao <select name="rating">{% for n in "54321" %}<option value="{{ n }}">{{ n }} sao</option>{% endfor %}</select></label>
       <input name="comment" placeholder="Bình luận (không bắt buộc)" maxlength="1000">
       <button class="btn btn--small btn--ghost" type="submit">{% icon "star" %}Đánh giá</button>
@@ -64,7 +64,6 @@
 <div class="dash">
 <section class="cartshop">
   <h2>{% icon "map-pin" %}Giao hàng</h2>
-  {% if o.ghn_status %}<p>Trạng thái GHN: <strong>{{ o.ghn_status }}</strong></p>{% endif %}
   <p><strong>{{ group.recipient_name }}</strong> &middot; {{ group.recipient_phone }}</p>
   <p class="shop">{{ group.address }}</p>
   {% if o.tracking_code %}<p>{% icon "truck" %}{{ o.carrier }}, mã vận đơn <strong>{{ o.tracking_code }}</strong>{% if o.shipped_at %} <span class="shop">(giao từ {{ o.shipped_at|date:"H:i d/m/Y" }})</span>{% endif %}</p>
@@ -81,7 +80,7 @@
       <ul>{% for t in txns %}<li><code>{{ t.ref }}</code> &middot; {{ t.amount|vnd }} &middot; {{ t.status|txn_status }}{% if t.refund_status %} &middot; <em>{{ t.refund_status|pay_status }}</em>{% endif %} <span class="shop">{{ t.created|date:"H:i d/m" }}</span></li>{% endfor %}</ul></details>{% endif %}
     {% if can_pay %}
       <p class="msg msg--warning">Cần thanh toán {{ pay_amount|vnd }}{% if pay_orders > 1 %} cho {{ pay_orders }} đơn của nhóm #{{ group.pk }}{% endif %}.{% if group.hold_until %} Kho được giữ đến <strong>{{ group.hold_until|date:"H:i d/m/Y" }}</strong>, quá hạn đơn sẽ tự hủy.{% endif %}</p>
-      <form method="post" action="{% url 'pay_group' group.pk %}" target="_blank" rel="noopener" data-pay="{{ group.pk }}" data-status-url="{% url 'payment_status' group.pk %}">{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán trực tuyến ({{ provider_label }})</button></form>
+      <form method="post" action="{% url 'pay_group' group.pk %}"{% if payment_provider == 'zalopay' %} target="_blank" rel="noopener" data-pay="{{ group.pk }}" data-status-url="{% url 'payment_status' group.pk %}"{% endif %}>{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán trực tuyến ({{ provider_label }})</button></form>
     {% endif %}
   {% else %}
     <p class="shop">Thanh toán khi nhận hàng. Trạng thái chuyển sang Đã thanh toán khi đơn Hoàn thành.</p>
@@ -103,9 +102,15 @@
 {% endif %}
 
 <div class="actions actions--col">
-  {% if o.status == 'DANG_GIAO' %}
-  <form method="post" action="{% url 'order_received' o.pk %}">{% csrf_token %}<button class="btn btn--block" type="submit">{% icon "circle-check" %}Đã nhận hàng</button>
-    <p class="shop">{% if o.shipping_data %}Trạng thái giao hàng được đồng bộ từ GHN.{% else %}Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.{% endif %}</p></form>
+  {% if o.status == 'DANG_GIAO' and not o.shipping_data %}
+    <form method="post" action="{% url 'order_received' o.pk %}">{% csrf_token %}<button class="btn btn--block" type="submit">{% icon "circle-check" %}Đã nhận hàng</button>
+      <p class="shop">Không phản hồi, đơn tự hoàn thành sau 7 ngày kể từ khi chuyển Đang giao.</p></form>
+  {% endif %}
+  {% if o.shipping_data and o.ghn_status == 'delivered' %}
+    <form method="post" action="{% url 'order_received' o.pk %}">{% csrf_token %}<button class="btn btn--block" type="submit">{% icon "circle-check" %}Đã nhận hàng</button>
+      <p class="shop">GHN đã xác nhận giao thành công.</p></form>
+  {% elif o.shipping_data and o.status == 'DANG_GIAO' %}
+    <p class="shop">Trạng thái giao hàng được đồng bộ từ GHN. Đơn chỉ hoàn thành khi GHN xác nhận giao thành công.</p>
   {% endif %}
   {% if can_reorder %}<form method="post" action="{% url 'order_reorder' o.pk %}">{% csrf_token %}<button class="btn btn--ghost btn--block" type="submit">{% icon "cart" %}Mua lại</button></form>{% endif %}
 </div>

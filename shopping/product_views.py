@@ -53,6 +53,19 @@ class ProductForm(forms.ModelForm):
 
 
 class BaseVariantFormSet(BaseInlineFormSet):
+    def add_fields(self, form, index):
+        super().add_fields(form, index)
+        if form.instance.pk:
+            form.fields['stock'].disabled = True
+            form.fields['stock'].help_text = 'Điều chỉnh tồn kho tại mục Kho nhanh.'
+
+    def save_existing(self, form, instance, commit=True):
+        # Preserve orders placed while the edit form was open. Inventory edits
+        # use the dedicated delta-based inventory screen.
+        current = Variant.objects.select_for_update().get(pk=instance.pk)
+        instance.stock = current.stock
+        return super().save_existing(form, instance, commit=commit)
+
     def clean(self):
         super().clean()
         if any(self.errors):

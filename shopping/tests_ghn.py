@@ -251,3 +251,30 @@ class GHNTests(Base):
             sync_order(order.pk)
         order.refresh_from_db()
         self.assertEqual(order.ghn_status, "delivered")
+
+    def test_webhook_status_demo(self):
+        """Demo callback với HTTP GHN giả lập, chỉ chạy trên test database."""
+        order = self.place()
+        with patch("shopping.ghn.request", side_effect=self.api):
+            services.update_status(self.v1u, order.pk, Order.CONFIRMED)
+        print("\nDEMO GHN (simulated GHN API, isolated test database)")
+        print("Initial: DA_XAC_NHAN | CHUA_THANH_TOAN")
+        for minute, status, expected in (
+            (1, "picked", Order.SHIPPING),
+            (2, "delivering", Order.SHIPPING),
+            (3, "delivered", Order.DONE),
+            (3, "delivered", Order.DONE),
+        ):
+            verified = {"order_code": "GHN123", "shop_id": 123, "status": status,
+                        "updated_date": f"2026-10-25T04:{minute:02d}:00Z"}
+            with patch("shopping.ghn.request", return_value=verified):
+                response = self.client.post(
+                    reverse("ghn_webhook"), {"OrderCode": "GHN123", "Status": status},
+                    content_type="application/json", HTTP_X_GHN_SECRET="test-hook")
+            order.refresh_from_db()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(order.status, expected)
+            print(f"Callback {status}: HTTP {response.status_code} | {order.status} | {order.payment_status}")
+        self.assertEqual(order.payment_status, Order.PAID)
+        self.assertEqual(order.status_logs.filter(new_status=Order.DONE).count(), 1)
+        print("Repeated delivered callback: only one completion recorded.")

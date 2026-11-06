@@ -181,12 +181,19 @@ def checkout(request):
     co = build_checkout(lines, global_code, shop_codes)
     shipping_error = ""
     shipping_quote = ""
+    quote_state = None
     if settings.GHN_ENABLED:
+        for part in co.parts:
+            part.shipping = 0
+
+    if post and settings.GHN_ENABLED:
         from django.core import signing
         from . import ghn
         try:
             ghn.quote_checkout(co, info, method)
-            quote_state = {"total": co.total, "destination": [info["province_id"], info["district_id"], info["ward_code"]],
+            quote_state = {"total": co.total, "address": info["address"], "method": method,
+                           "province_id": info["province_id"], "district_id": info["district_id"],
+                           "ward_code": info["ward_code"],
                            "parts": [[p.shop.pk, p.shipping, p.total] for p in co.parts]}
             shipping_quote = signing.dumps(quote_state, salt="ghn-quote")
         except OrderError as exc:
@@ -202,9 +209,9 @@ def checkout(request):
                 try:
                     accepted = signing.loads(data.get("shipping_quote", ""), salt="ghn-quote", max_age=900)
                 except signing.BadSignature:
-                    raise OrderError("Vui lòng bấm Tính phí GHN và kiểm tra tổng tiền trước khi đặt hàng.") from None
+                    raise OrderError("Vui lòng tính phí GHN và kiểm tra địa chỉ, tổng tiền trước khi đặt hàng.") from None
                 if accepted != quote_state:
-                    raise OrderError("Phí hoặc địa chỉ đã thay đổi. Vui lòng kiểm tra tổng tiền mới rồi đặt lại.")
+                    raise OrderError("Địa chỉ hoặc phí vận chuyển đã đổi. Vui lòng kiểm tra tổng tiền mới rồi đặt lại.")
                 info["expected_total"] = co.total
             group = services.place_order(request.user, {l["v"].pk: l["qty"] for l in lines}, info, method, global_code, shop_codes,
                                          clear_cart=not is_buy_now)
@@ -227,6 +234,7 @@ def checkout(request):
         "buy_now": is_buy_now, "back_url": (item or {}).get("back") if is_buy_now else None,
         "provider_label": payments.provider_label(), "hold_minutes": getattr(settings, "PAYMENT_HOLD_MINUTES", 15),
         "ghn_enabled": settings.GHN_ENABLED, "shipping_error": shipping_error, "shipping_quote": shipping_quote,
+        "shipping_ready": not settings.GHN_ENABLED or bool(shipping_quote),
     })
 
 
@@ -237,9 +245,10 @@ def order_success(request, group_id):
     group = get_object_or_404(OrderGroup, pk=group_id, user=request.user)
     orders = list(group.orders.select_related("shop"))
     can_pay = group.payment_method == OrderGroup.ONLINE and any(
-        o.status != Order.CANCELED and o.payment_status == Order.UNPAID for o in orders)
+        o.status not in (Order.CANCELED, Order.FAILED) and o.payment_status == Order.UNPAID for o in orders)
     return render(request, "shopping/order_success.html", {"group": group, "orders": orders, "can_pay": can_pay,
-                                                           "provider_label": payments.provider_label()})
+                                                           "provider_label": payments.provider_label(),
+                                                           "payment_provider": payments.provider()})
 
 
 # --------------------------------------------------------------- theo dõi đơn
@@ -310,7 +319,7 @@ def payment_status(request, group_id):
     group = get_object_or_404(OrderGroup, pk=group_id, user=request.user)
     if group.payment_method == OrderGroup.ONLINE:
         payments.reconcile_group(group.pk, throttle=10)
-    live = [o for o in group.orders.all() if o.status != Order.CANCELED]
+    live = [o for o in group.orders.all() if o.status not in (Order.CANCELED, Order.FAILED)]
     if not live:
         state = "canceled"
     elif all(o.payment_status == Order.PAID for o in live):

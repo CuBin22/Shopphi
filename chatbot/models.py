@@ -3,6 +3,18 @@ from django.db import models
 from django.utils import timezone
 
 
+class ProductEmbedding(models.Model):
+    product = models.OneToOneField("catalog.Product", on_delete=models.CASCADE, related_name="chatbot_embedding")
+    vector = models.JSONField(default=list)
+    content_hash = models.CharField(max_length=64, db_index=True)
+    model = models.CharField(max_length=80)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Embedding sản phẩm chatbot"
+        verbose_name_plural = "Embedding sản phẩm chatbot"
+
+
 class ChatLog(models.Model):
     """Nhật ký hội thoại. Chỉ lưu câu hỏi ĐÃ che thông tin cá nhân (QĐ12, NFR05)."""
     OK, REFUSED, ERROR = "OK", "TU_CHOI", "LOI"

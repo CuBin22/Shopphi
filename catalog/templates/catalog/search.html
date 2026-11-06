@@ -2,11 +2,22 @@
 {% load shop_extras %}
 {% block title %}{% if q %}{{ q }} - {% endif %}Tìm kiếm - Shopphi{% endblock %}
 {% block content %}
-<div class="resulthead">
+<div class="search-showcase">
+  <div class="search-showcase__copy">
+    <span class="search-showcase__eyebrow">KHÁM PHÁ SHOPPHI</span>
+    <div class="resulthead">
   <h1>
     {% if q %}Kết quả cho "{{ q }}"{% elif current_category %}{{ current_category.name }}{% else %}Tất cả sản phẩm{% endif %}
   </h1>
   <p>{{ total }} sản phẩm{% if page.paginator.num_pages > 1 %}, trang {{ page.number }}/{{ page.paginator.num_pages }}{% endif %}</p>
+    </div>
+    <p class="search-showcase__hint">Khám phá sản phẩm từ nhiều gian hàng, so sánh giá và chọn đúng món bạn cần.</p>
+  </div>
+  <div class="search-showcase__assist">
+    <span class="search-showcase__spark" aria-hidden="true">✦</span>
+    <div><strong>Cần gợi ý cụ thể hơn?</strong><span>Hỏi về ngân sách, thông số hoặc tồn kho.</span></div>
+    <button type="button" data-chat-open>Hỏi trợ lý <span aria-hidden="true">→</span></button>
+  </div>
 </div>
 
 <form class="filters" method="get" action="{% url 'search' %}">

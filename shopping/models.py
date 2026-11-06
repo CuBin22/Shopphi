@@ -109,9 +109,10 @@ class OrderGroup(models.Model):
 
 
 class Order(models.Model):
+    FAILED = 'GIAO_THAT_BAI'
     PENDING, CONFIRMED, SHIPPING, DONE, CANCELED = "CHO_XAC_NHAN", "DA_XAC_NHAN", "DANG_GIAO", "HOAN_THANH", "DA_HUY"
     STATUS = [(PENDING, "Chờ xác nhận"), (CONFIRMED, "Đã xác nhận"), (SHIPPING, "Đang giao"),
-              (DONE, "Hoàn thành"), (CANCELED, "Đã hủy")]
+              (DONE, "Hoàn thành"), (CANCELED, "Đã hủy"), (FAILED, "Giao thất bại")]
     UNPAID, PAID, REFUND_WAIT, REFUNDED = "CHUA_THANH_TOAN", "DA_THANH_TOAN", "CHO_HOAN_TIEN", "DA_HOAN_TIEN"
     PAY_STATUS = [(UNPAID, "Chưa thanh toán"), (PAID, "Đã thanh toán"), (REFUND_WAIT, "Chờ hoàn tiền"), (REFUNDED, "Đã hoàn tiền")]
 
