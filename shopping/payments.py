@@ -138,6 +138,7 @@ def _apply(first, status, amount, group_id=None, now=None, zp_trans_id=None, pai
         expire_overdue(now, group_id=first.group_id, reconcile=False)
 
     with transaction.atomic():
+        OrderGroup.objects.select_for_update().get(pk=first.group_id)
         txn = PaymentTransaction.objects.select_for_update(of=("self",)).select_related("group__user").get(pk=first.pk)
         if (group_id is not None and str(txn.group_id) != str(group_id)) or int(txn.amount) != int(amount):
             raise PaymentError("Số tiền hoặc mã nhóm đơn không khớp giao dịch, kết quả bị từ chối.")

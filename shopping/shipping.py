@@ -112,6 +112,7 @@ def cancel_shipment(order):
 
 def sync_order(order_id):
     with transaction.atomic():
+        services._lock_group_for_order(order_id)
         order = services._lock_order(order_id)
         if not order.shipping_data or not order.tracking_code:
             raise services.OrderError("Đơn chưa có vận đơn GHN.")

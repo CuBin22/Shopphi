@@ -10,6 +10,9 @@ import urllib.request
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.sessions.models import Session
+from django.db import transaction
 from django.db.models import Prefetch
 from django.utils import timezone
 
@@ -80,38 +83,39 @@ def retrieve(question: str, current_id=None, limit=3):
     if re.search(r"\bco day\b", plain) and not re.search(r"\bkhong day\b", plain):
         qs = qs.filter(search_text__contains="co day").exclude(search_text__contains="khong day")
     # Apply explicit budgets before ranking, including the current product.
-    budget = re.search(
-        r"\b(duoi|khong qua|toi da|tren|it nhat|tu)\s+(\d+(?:[.,]\d+)*)\s*(trieu|tr|nghin|ngan|k)?",
-        khong_dau(question),
-    )
-    if budget:
-        operator, amount, unit = budget.groups()
-        if unit:
-            normalized = amount.replace(',', '.')
-            if normalized.count('.') > 1:
-                normalized = normalized.replace('.', '')
-            value = float(normalized) * (1_000_000 if unit in ('trieu', 'tr') else 1_000)
-        else:
-            value = int(amount.replace('.', '').replace(',', ''))
-        lookup = {'duoi': 'lt', 'tren': 'gt', 'it nhat': 'gte', 'tu': 'gte'}.get(operator, 'lte')
-        eligible = Variant.objects.filter(stock__gt=0, **{f'price__{lookup}': value})
+    budget_pattern = r"\b(duoi|khong qua|toi da|tren|it nhat|tu|den)\s+(\d+(?:[.,]\d+)*)\s*(trieu|tr|nghin|ngan|k)?\b"
+    budgets = list(re.finditer(budget_pattern, plain))
+    if budgets:
+        eligible = Variant.objects.filter(stock__gt=0)
+        for budget in budgets:
+            operator, amount, unit = budget.groups()
+            if unit:
+                normalized = amount.replace(',', '.')
+                if normalized.count('.') > 1:
+                    normalized = normalized.replace('.', '')
+                value = float(normalized) * (1_000_000 if unit in ('trieu', 'tr') else 1_000)
+            else:
+                value = int(amount.replace('.', '').replace(',', ''))
+            lookup = {'duoi': 'lt', 'tren': 'gt', 'it nhat': 'gte', 'tu': 'gte'}.get(operator, 'lte')
+            eligible = eligible.filter(**{f'price__{lookup}': value})
         qs = qs.filter(pk__in=eligible.values('product_id')).prefetch_related(
             Prefetch('variants', queryset=eligible, to_attr='matching_variants'))
     products = list(qs)
     found = []
-    if current_id:
-        cur = next((product for product in products if product.pk == current_id), None)
-        if cur:
-            found.append(cur)
-    search_question = plain if budget else question
-    if budget:
-        search_question = re.sub(r"\b(duoi|khong qua|toi da|tren|it nhat|tu)\s+\d+(?:[.,]\d+)*\s*(trieu|tr|nghin|ngan|k|dong|d)?\b", " ", search_question, flags=re.IGNORECASE)
+    search_question = re.sub(budget_pattern + r"(?:\s+(?:dong|d)\b)?", " ", plain) if budgets else plain
     def normalized_tokens(value):
         normalized = khong_dau(value)
         return {word for word in re.findall(r"[^\W_]+", normalized, flags=re.UNICODE)
                 if khong_dau(word) not in STOP | INTENT_WORDS}
 
     query_tokens = normalized_tokens(search_question)
+    if current_id:
+        cur = next((product for product in products if product.pk == current_id), None)
+        refers_to_current = bool(re.search(r"\b(?:san pham nay|cai nay|mau nay|con nay|nay)\b|^day\b", plain))
+        current_terms = normalized_tokens(f"{cur.name} {cur.brand} {cur.tags}") if cur else set()
+        if cur and (refers_to_current or bool(query_tokens & current_terms)
+                    or (not query_tokens and detect_intent(plain) != "RECOMMEND")):
+            found.append(cur)
     if not query_tokens and not os.environ.get("GEMINI_API_KEY"):
         return found[:limit]
 
@@ -328,13 +332,20 @@ def ask(actor, message: str, current_product_id=None):
         raise ChatError("Hãy nhập câu hỏi.")
     if len(message) > MAX_LEN:
         raise ChatError(f"Câu hỏi quá dài, tối đa {MAX_LEN} ký tự.")
-    recent = ChatLog.objects.filter(created__gte=timezone.now() - timedelta(minutes=1))
-    recent = recent.filter(user=actor.user) if actor.user else recent.filter(session_key=actor.session_key)
-    if recent.count() >= MAX_PER_MINUTE:
-        raise ChatError("Bạn gửi tin nhắn quá nhanh, vui lòng thử lại sau ít phút.")
-
     started = time.monotonic()
     masked = mask_pii(message)
+    # Reserve a slot under a per-identity database lock before calling Gemini.
+    with transaction.atomic():
+        if actor.user:
+            get_user_model().objects.select_for_update().get(pk=actor.user.pk)
+        else:
+            Session.objects.select_for_update().get(session_key=actor.session_key)
+        recent = ChatLog.objects.filter(created__gte=timezone.now() - timedelta(minutes=1))
+        recent = recent.filter(user=actor.user) if actor.user else recent.filter(session_key=actor.session_key)
+        if recent.count() >= MAX_PER_MINUTE:
+            raise ChatError("Bạn gửi tin nhắn quá nhanh, vui lòng thử lại sau ít phút.")
+        log = ChatLog.objects.create(user=actor.user, session_key=actor.session_key,
+                                     question=masked[:500], answer="", status=ChatLog.OK)
     plain = khong_dau(masked)
     intent = detect_intent(plain)
     status, provider, products = ChatLog.OK, "", []
@@ -352,7 +363,7 @@ def ask(actor, message: str, current_product_id=None):
             if os.environ.get("GEMINI_API_KEY"):
                 provider = "gemini"
                 try:
-                    answer = call_llm(masked, contexts, intent)
+                    answer = call_llm(masked, contexts, intent) or _offline_order_answer(orders)
                 except Exception:  # noqa: BLE001
                     logger.warning("Lỗi gọi LLM", exc_info=True)
                     status = ChatLog.ERROR
@@ -385,10 +396,10 @@ def ask(actor, message: str, current_product_id=None):
                 answer = _offline_answer(intent, products, knowledge)
 
     try:
-        ChatLog.objects.create(
-            user=actor.user, session_key=actor.session_key, question=masked[:500], answer=answer, intent=intent,
-            product_ids=",".join(str(p.pk) for p in products), status=status, provider=provider,
-            latency_ms=int((time.monotonic() - started) * 1000))
+        log.answer, log.intent, log.product_ids = answer, intent, ",".join(str(p.pk) for p in products)
+        log.status, log.provider = status, provider
+        log.latency_ms = int((time.monotonic() - started) * 1000)
+        log.save(update_fields=["answer", "intent", "product_ids", "status", "provider", "latency_ms"])
     except Exception:  # noqa: BLE001
         logger.warning("Không ghi được nhật ký chatbot", exc_info=True)
     return {"answer": answer, "status": status}
@@ -396,5 +407,6 @@ def ask(actor, message: str, current_product_id=None):
 
 def history(actor, limit=30):
     q = ChatLog.objects.filter(user=actor.user) if actor.user else ChatLog.objects.filter(session_key=actor.session_key)
+    q = q.exclude(answer="")  # Slots still waiting for Gemini are not responses.
     rows = list(q.order_by("-created", "-id")[:limit])[::-1]
     return [{"q": r.question, "a": r.answer} for r in rows]

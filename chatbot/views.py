@@ -15,6 +15,8 @@ def chat(request):
         payload = json.loads(request.body.decode() or "{}")
     except ValueError:
         return JsonResponse({"error": "Dữ liệu không hợp lệ."}, status=400)
+    if not isinstance(payload, dict) or not isinstance(payload.get("message", ""), str):
+        return JsonResponse({"error": "Câu hỏi phải là văn bản trong JSON object."}, status=400)
     pid = payload.get("product_id")
     try:
         pid = int(pid) if pid else None

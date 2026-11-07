@@ -197,7 +197,8 @@ def _item_scores(seeds, skip_keys):
 def _popular_rank():
     def build():
         score = defaultdict(float)
-        rows = BehaviorLog.objects.filter(product__isnull=False, type__in=list(WEIGHTS)).values_list("product_id", "type")
+        rows = (BehaviorLog.objects.filter(product__isnull=False, type__in=list(WEIGHTS))
+                .order_by("-id").values_list("product_id", "type")[:30000])
         for pid, t in rows:
             score[pid] += WEIGHTS[t]
         ordered = sorted(score, key=lambda p: -score[p])
@@ -256,16 +257,22 @@ def recommend(actor: Actor, current=None, limit=8):
     """
     profile = _profile(actor)
     exclude = set([current.pk]) if current else set()
-    products = _interest_rank(actor, profile, exclude, limit)
+    interest = _interest_rank(actor, profile, exclude, limit)
+    products = []
     if len(profile) >= MIN_PRODUCTS_FOR_PERSONAL:
         seeds = dict(profile)
         if current:
             seeds[current.pk] = seeds.get(current.pk, 0) + 4
         skip = {f"s{actor.session_key}"} | ({f"u{actor.user.pk}"} if actor.user else set())
         scores = _item_scores(seeds, skip)
-        ids = [p for p in sorted(scores, key=lambda p: -scores[p]) if p not in exclude and p not in {item.pk for item in products}]
+        ids = [p for p in sorted(scores, key=lambda p: -scores[p]) if p not in exclude]
         by_id = {p.pk: p for p in _in_stock(Q(pk__in=ids[: limit * 3]))}
-        products += [by_id[i] for i in ids if i in by_id][:limit - len(products)]
+        collaborative = [by_id[i] for i in ids if i in by_id]
+        products = interest[:max(1, limit // 2)]
+        taken = {p.pk for p in products}
+        products += [p for p in collaborative if p.pk not in taken][:limit - len(products)]
+    taken = {p.pk for p in products}
+    products += [p for p in interest if p.pk not in taken][:limit - len(products)]
     personal = bool(products)
     if len(products) < limit:
         taken = exclude | {p.pk for p in products}

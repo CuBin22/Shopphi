@@ -204,8 +204,10 @@ def resend_otp(request):
     ident = request.session.get(SESSION_RESET_KEY)
     if not ident:
         return redirect("forgot_password")
-    otp.request_otp(ident)
-    messages.info(request, otp.sent_message())
+    if otp.request_otp(ident):
+        messages.info(request, "Mã OTP mới đã được gửi. Vui lòng kiểm tra email hoặc số điện thoại.")
+    else:
+        messages.warning(request, "Chưa gửi được mã mới. Nếu vừa nhận mã, bạn vẫn có thể dùng mã đó; nếu không, hãy chờ rồi thử lại.")
     return redirect("reset_password")
 
 

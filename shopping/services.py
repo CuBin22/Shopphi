@@ -270,6 +270,13 @@ def _lock_order(order_id):
         raise OrderError("Không tìm thấy đơn hàng.")
 
 
+def _lock_group_for_order(order_id):
+    group_id = Order.objects.filter(pk=order_id).values_list("group_id", flat=True).first()
+    if group_id is None:
+        raise OrderError("Không tìm thấy đơn hàng.")
+    OrderGroup.objects.select_for_update().get(pk=group_id)
+
+
 def _check_customer(order, user):
     if order.group.user_id != user.pk:
         raise OrderError("Đơn hàng không thuộc tài khoản của bạn.")
@@ -284,6 +291,7 @@ def _check_vendor(order, user):
 def cancel_order(order_id, actor, reason, auto=False, _ghn_verified=False):
     """Hủy đơn: hoàn tồn kho, hoàn lượt mã, chuyển trạng thái thanh toán, ghi nhật ký (cùng một giao dịch)."""
     with transaction.atomic():
+        _lock_group_for_order(order_id)
         order = _lock_order(order_id)
         if order.status == Order.CANCELED:
             raise OrderError("Đơn hàng đã được hủy trước đó.")
@@ -334,6 +342,7 @@ def customer_cancel(user, order_id, reason):
     if not reason:
         raise OrderError("Vui lòng nhập lý do hủy.")
     with transaction.atomic():
+        _lock_group_for_order(order_id)
         order = _lock_order(order_id)
         _check_customer(order, user)
         if order.status == Order.PENDING:
@@ -358,6 +367,7 @@ def vendor_cancel(user, order_id, reason):
     if not reason:
         raise OrderError("Người bán hủy đơn phải ghi lý do.")
     with transaction.atomic():
+        _lock_group_for_order(order_id)
         order = _lock_order(order_id)
         _check_vendor(order, user)
         if not order.cancel_requests.filter(result=CancelRequest.PENDING).exists():
@@ -368,6 +378,7 @@ def vendor_cancel(user, order_id, reason):
 
 def vendor_resolve_cancel(user, order_id, accept, reject_reason=""):
     with transaction.atomic():
+        _lock_group_for_order(order_id)
         order = _lock_order(order_id)
         _check_vendor(order, user)
         req = order.cancel_requests.filter(result=CancelRequest.PENDING).first()

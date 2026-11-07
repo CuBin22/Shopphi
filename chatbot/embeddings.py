@@ -107,9 +107,11 @@ def refresh_product_embeddings(products) -> dict[int, list[float]]:
     rows = {row.product_id: row for row in ProductEmbedding.objects.filter(
         product_id__in=[product.pk for product in products])}
     stale = []
+    fingerprints = {}
     for product in products:
         content = product_embedding_text(product)
         fingerprint = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        fingerprints[product.pk] = fingerprint
         row = rows.get(product.pk)
         if not row or row.content_hash != fingerprint or row.model != model or not row.vector:
             stale.append((product, content, fingerprint))
@@ -127,4 +129,4 @@ def refresh_product_embeddings(products) -> dict[int, list[float]]:
             logger.warning("Không tạo/cập nhật được embedding sản phẩm", exc_info=True)
 
     return {product_id: row.vector for product_id, row in rows.items()
-            if row.model == model and row.vector}
+            if row.model == model and row.content_hash == fingerprints[product_id] and row.vector}

@@ -5,6 +5,7 @@ DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT.
 """
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,7 +31,11 @@ def _load_dotenv(path):
 _load_dotenv(BASE_DIR / ".env")        # chứa EMAIL_HOST_USER / EMAIL_HOST_PASSWORD (không đưa vào git)
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-hay-doi-khi-trien-khai")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+DEBUG = os.environ.get("DJANGO_DEBUG", "0" if os.environ.get("RENDER") == "true" else "1") == "1"
+if not DEBUG and SECRET_KEY == "dev-only-hay-doi-khi-trien-khai":
+    raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set for production.")
+if os.environ.get("RENDER") == "true" and DEBUG:
+    raise ImproperlyConfigured("Set DJANGO_DEBUG=0 on Render.")
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".ngrok-free.app", ".ngrok-free.dev"]
 CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app", "https://*.ngrok-free.dev"]
 if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
@@ -138,6 +143,8 @@ if os.environ.get("AWS_ENDPOINT_URL_S3"):
             "file_overwrite": False,
         },
     }
+elif os.environ.get("RENDER") == "true":
+    raise ImproperlyConfigured("Configure AWS_ENDPOINT_URL_S3 and a persistent media bucket on Render.")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---- Đăng nhập, phiên, chatbot ----

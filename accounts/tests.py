@@ -143,11 +143,13 @@ class PasswordResetTests(TestCase):
     # ------------------------------------------------------ giới hạn tần suất
     def test_cooldown_and_resend(self):
         self.start("an@example.com")
-        self.c.post(reverse("resend_otp"))                      # quá nhanh: không gửi thêm
+        r = self.c.post(reverse("resend_otp"), follow=True)  # quá nhanh: không gửi thêm
+        self.assertContains(r, "Chưa gửi được mã mới")
         self.assertEqual(len(mail.outbox), 1)
         PasswordResetOTP.objects.update(created=timezone.now() - timedelta(seconds=61))
         old = code_from_mail()
-        self.c.post(reverse("resend_otp"))
+        r = self.c.post(reverse("resend_otp"), follow=True)
+        self.assertContains(r, "Mã OTP mới đã được gửi")
         self.assertEqual(len(mail.outbox), 2)
         new = code_from_mail()
         if old != new:

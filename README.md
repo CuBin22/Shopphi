@@ -117,6 +117,8 @@ Mặc định chưa cấu hình dịch vụ gửi nên **mã OTP được in ra 
 | Thông số OTP | `OTP_TTL_MINUTES` (10), `OTP_MAX_ATTEMPTS` (5), `OTP_RESEND_SECONDS` (60), `OTP_MAX_PER_HOUR` (5) |
 
 Render Free chặn kết nối ra SMTP cổng 25, 465 và 587, nên cấu hình Gmail SMTP chỉ phù hợp cho môi trường cho phép SMTP. Trên Render Free, xác minh sender trong Brevo, tạo API key, đặt hai biến Brevo ở Environment rồi deploy lại; thử đăng ký/quên mật khẩu bằng một email nhận thật. API chấp nhận gửi chưa bảo đảm thư đã đến hộp thư: xem Transactional Logs của Brevo nếu không nhận được.
+
+**Triển khai Render:** đặt `DJANGO_DEBUG=0` và `DJANGO_SECRET_KEY` thành chuỗi ngẫu nhiên riêng. Ảnh sản phẩm phải lưu trong kho S3 tương thích: cấu hình `AWS_ENDPOINT_URL_S3`, `AWS_STORAGE_BUCKET_NAME`, `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Ứng dụng sẽ từ chối khởi động trên Render nếu thiếu khóa Django hoặc endpoint kho ảnh, để tránh chạy với khóa mặc định hay lưu ảnh vào ổ đĩa tạm. Di chuyển ảnh cũ từ `media/` sang bucket trước khi chuyển lưu trữ; chỉ đổi cấu hình không tự sao chép ảnh đã tải lên.
 Ví dụ chạy Gmail SMTP trên máy local: `$env:EMAIL_HOST_USER="ban@gmail.com"; $env:EMAIL_HOST_PASSWORD="abcd efgh ijkl mnop"; python manage.py runserver`.
 Bảo mật: mã sinh bằng `secrets`, chỉ lưu băm (HMAC + muối); dùng một lần; hết hạn sau 10 phút; sai 5 lần thì hủy mã; cách nhau 60 giây và tối đa 5 mã/giờ cho một tài khoản; trang báo nếu tài khoản không tồn tại trước bước nhập OTP; đổi mật khẩu xong thì phiên cũ hết hiệu lực và khóa đăng nhập (sai 5 lần) được gỡ. Tài khoản `admin` tạo bằng `createsuperuser` không có email/SĐT đăng ký nên không dùng được chức năng này.
 
@@ -124,7 +126,7 @@ Bảo mật: mã sinh bằng `secrets`, chỉ lưu băm (HMAC + muối); dùng m
 
 Cập nhật: `pip install -r requirements.txt` (cần **Pillow**), `python manage.py migrate` (migration `catalog/0005`, `shopping/0004`).
 **Ảnh sản phẩm:** tải ảnh thật qua Kênh quản lý; sao lưu thư mục `media/products/` cùng cơ sở dữ liệu.
-**Hiển thị ảnh:** file lưu ở thư mục `media/products/`, được phục vụ tại `/media/...` khi chạy `runserver` với `DJANGO_DEBUG=1` (mặc định). Khi triển khai thật (DEBUG tắt) phải cấu hình web server (nginx/Apache) trỏ `/media/` tới thư mục `media/`; Django không tự phục vụ file này.
+**Hiển thị ảnh:** khi chạy local với `DJANGO_DEBUG=1`, file ở `media/products/` được phục vụ tại `/media/...`. Trên Render, dùng kho S3 tương thích như hướng dẫn trên; khi tự triển khai với ổ đĩa bền vững và `DEBUG=0`, cấu hình web server (nginx/Apache) phục vụ thư mục `media/`.
 
 Đăng nhập tài khoản người bán của bạn > **Kênh quản lý**:
 
