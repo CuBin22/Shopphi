@@ -194,9 +194,12 @@ EMAIL_USE_TLS = (os.environ.get("EMAIL_USE_TLS", "1") == "1") and not EMAIL_USE_
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "").replace(" ", "")   # mật khẩu ứng dụng hay bị dán kèm dấu cách
 EMAIL_TIMEOUT = 15
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
+BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "")
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "Shopphi <no-reply@shopphi.local>")
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
+    "accounts.email_backend.BrevoEmailBackend" if BREVO_API_KEY else
     "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST_USER else "django.core.mail.backends.console.EmailBackend")
 
 # SMS: "console" (mặc định, in mã ra cửa sổ runserver), "twilio" (cần TWILIO_*), hoặc đường dẫn hàm tự viết

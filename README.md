@@ -110,13 +110,15 @@ Mặc định chưa cấu hình dịch vụ gửi nên **mã OTP được in ra 
 
 | Mục đích | Biến môi trường |
 | --- | --- |
+| Email OTP trên Render Free (Brevo HTTPS API) | `BREVO_API_KEY` (API key, không phải SMTP key), `BREVO_SENDER_EMAIL` (địa chỉ sender đã xác minh ở Brevo). Có API key thì ứng dụng tự chọn `accounts.email_backend.BrevoEmailBackend`; xóa biến `EMAIL_BACKEND` cũ trên Render nếu đã đặt thủ công. |
 | Email thật (Gmail) | `EMAIL_HOST_USER` (địa chỉ Gmail), `EMAIL_HOST_PASSWORD` (**Mật khẩu ứng dụng** của Google, cần bật xác minh 2 bước), tùy chọn `EMAIL_HOST`, `EMAIL_PORT`, `DEFAULT_FROM_EMAIL` |
 | SMS qua Twilio | `SMS_BACKEND=twilio`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` |
 | SMS nhà cung cấp Việt Nam (eSMS, SpeedSMS...) | `SMS_BACKEND=ten_goi.ten_module.ham_gui` với hàm `ham_gui(phone, text)` tự viết gọi API của nhà cung cấp (xem `accounts/sms.py`) |
 | Thông số OTP | `OTP_TTL_MINUTES` (10), `OTP_MAX_ATTEMPTS` (5), `OTP_RESEND_SECONDS` (60), `OTP_MAX_PER_HOUR` (5) |
 
-Ví dụ PowerShell: `$env:EMAIL_HOST_USER="ban@gmail.com"; $env:EMAIL_HOST_PASSWORD="abcd efgh ijkl mnop"; python manage.py runserver`.
-Bảo mật: mã sinh bằng `secrets`, chỉ lưu băm (HMAC + muối); dùng một lần; hết hạn sau 10 phút; sai 5 lần thì hủy mã; cách nhau 60 giây và tối đa 5 mã/giờ cho một tài khoản; trang không cho biết tài khoản có tồn tại hay không; đổi mật khẩu xong thì phiên cũ hết hiệu lực và khóa đăng nhập (sai 5 lần) được gỡ. Tài khoản `admin` tạo bằng `createsuperuser` không có email/SĐT đăng ký nên không dùng được chức năng này.
+Render Free chặn kết nối ra SMTP cổng 25, 465 và 587, nên cấu hình Gmail SMTP chỉ phù hợp cho môi trường cho phép SMTP. Trên Render Free, xác minh sender trong Brevo, tạo API key, đặt hai biến Brevo ở Environment rồi deploy lại; thử đăng ký/quên mật khẩu bằng một email nhận thật. API chấp nhận gửi chưa bảo đảm thư đã đến hộp thư: xem Transactional Logs của Brevo nếu không nhận được.
+Ví dụ chạy Gmail SMTP trên máy local: `$env:EMAIL_HOST_USER="ban@gmail.com"; $env:EMAIL_HOST_PASSWORD="abcd efgh ijkl mnop"; python manage.py runserver`.
+Bảo mật: mã sinh bằng `secrets`, chỉ lưu băm (HMAC + muối); dùng một lần; hết hạn sau 10 phút; sai 5 lần thì hủy mã; cách nhau 60 giây và tối đa 5 mã/giờ cho một tài khoản; trang báo nếu tài khoản không tồn tại trước bước nhập OTP; đổi mật khẩu xong thì phiên cũ hết hiệu lực và khóa đăng nhập (sai 5 lần) được gỡ. Tài khoản `admin` tạo bằng `createsuperuser` không có email/SĐT đăng ký nên không dùng được chức năng này.
 
 ### 1.2 Bản v5: module Người bán và ảnh sản phẩm
 

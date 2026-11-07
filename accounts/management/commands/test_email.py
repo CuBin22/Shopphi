@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Gửi một email thử tới địa chỉ chỉ định để kiểm tra cấu hình SMTP (Gmail)."
+    help = "Gửi một email thử để kiểm tra backend email hiện hành."
 
     def add_arguments(self, parser):
         parser.add_argument("to", help="Địa chỉ nhận thư thử")
@@ -17,9 +17,12 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         s = settings
         self.stdout.write(f"Backend : {s.EMAIL_BACKEND}")
-        self.stdout.write(f"Máy chủ : {s.EMAIL_HOST}:{s.EMAIL_PORT}  TLS={s.EMAIL_USE_TLS}  SSL={getattr(s, 'EMAIL_USE_SSL', False)}")
-        self.stdout.write(f"Tài khoản gửi: {s.EMAIL_HOST_USER or '(chưa đặt EMAIL_HOST_USER)'}  "
-                          f"độ dài mật khẩu: {len(s.EMAIL_HOST_PASSWORD)} (mật khẩu ứng dụng Gmail phải đủ 16)")
+        if s.EMAIL_BACKEND == "accounts.email_backend.BrevoEmailBackend":
+            self.stdout.write(f"Brevo API: key={'đã cấu hình' if s.BREVO_API_KEY else 'chưa cấu hình'}, sender={s.BREVO_SENDER_EMAIL or '(chưa đặt)'}")
+        else:
+            self.stdout.write(f"Máy chủ : {s.EMAIL_HOST}:{s.EMAIL_PORT}  TLS={s.EMAIL_USE_TLS}  SSL={getattr(s, 'EMAIL_USE_SSL', False)}")
+            self.stdout.write(f"Tài khoản gửi: {s.EMAIL_HOST_USER or '(chưa đặt EMAIL_HOST_USER)'}  "
+                              f"độ dài mật khẩu: {len(s.EMAIL_HOST_PASSWORD)} (mật khẩu ứng dụng Gmail phải đủ 16)")
         if "console" in s.EMAIL_BACKEND:
             self.stdout.write(self.style.WARNING("Đang dùng backend console: thư chỉ in ra terminal. Hãy đặt EMAIL_HOST_USER và EMAIL_HOST_PASSWORD."))
         try:
@@ -35,4 +38,4 @@ class Command(BaseCommand):
         except Exception as e:  # noqa: BLE001
             self.stdout.write(self.style.ERROR(f"LỖI KHÁC: {type(e).__name__}: {e}"))
         else:
-            self.stdout.write(self.style.SUCCESS(f"Đã gửi {n} thư tới {opts['to']}. Kiểm tra hộp thư (cả Spam)."))
+            self.stdout.write(self.style.SUCCESS(f"Backend đã tiếp nhận {n} thư tới {opts['to']}. Kiểm tra hộp thư (cả Spam) và log nhà cung cấp."))
