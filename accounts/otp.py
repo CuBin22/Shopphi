@@ -4,7 +4,7 @@ Bảo mật:
   * mã 6 chữ số sinh bằng `secrets`; chỉ lưu băm HMAC(SECRET_KEY, muối:mã); so sánh bằng compare_digest;
   * hiệu lực OTP_TTL_MINUTES, dùng một lần; sai quá OTP_MAX_ATTEMPTS lần thì hủy mã;
   * giới hạn tần suất gửi (cách nhau OTP_RESEND_SECONDS, tối đa OTP_MAX_PER_HOUR mã/giờ cho một tài khoản);
-  * KHÔNG tiết lộ tài khoản có tồn tại hay không: mọi trường hợp đều trả cùng một thông điệp chung;
+  * Bước nhập email/SĐT thông báo nếu tài khoản không tồn tại trước khi mở bước nhập OTP;
   * đặt lại mật khẩu thành công thì mọi mã khác bị hủy, phiên đăng nhập cũ hết hiệu lực (Django đổi session hash),
     và khóa đăng nhập do sai mật khẩu (QĐ2) được gỡ.
 """
@@ -36,7 +36,7 @@ BAD_OTP = "Mã OTP không đúng hoặc đã hết hạn."
 
 
 class OtpError(Exception):
-    """Lỗi hiển thị trực tiếp cho người dùng (không làm lộ tài khoản có tồn tại hay không)."""
+    """Lỗi OTP hiển thị trực tiếp cho người dùng."""
 
 
 def sent_message():
@@ -90,8 +90,7 @@ def _deliver(otp, code):
 
 
 def request_otp(raw_identifier, now=None):
-    """Tạo và gửi OTP. LUÔN trả về cùng một kết quả cho người gọi (không lộ tài khoản có tồn tại hay không);
-    lý do thực sự (không có tài khoản, quá tần suất, lỗi gửi) chỉ ghi log. Trả về True nếu đã gửi mã đi."""
+    """Tạo và gửi OTP; trả về True khi gửi thành công, False nếu không gửi được."""
     now = now or timezone.now()
     found = find_account(raw_identifier)
     if found is None:

@@ -159,16 +159,21 @@ SESSION_RESET_KEY = "reset_ident"
 
 
 def forgot_password(request):
-    """Bước 1: nhập email/SĐT đã đăng ký -> gửi OTP. Luôn hiện cùng một thông báo (không lộ tài khoản có tồn tại hay không)."""
+    """Bước 1: kiểm tra tài khoản và gửi OTP trước khi mở trang đặt lại mật khẩu."""
     if request.user.is_authenticated:
         return redirect("home")
     form = ForgotForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         ident = form.cleaned_data["identifier"]
-        otp.request_otp(ident)
-        request.session[SESSION_RESET_KEY] = ident
-        messages.info(request, otp.sent_message())
-        return redirect("reset_password")
+        request.session.pop(SESSION_RESET_KEY, None)
+        if otp.find_account(ident) is None:
+            form.add_error("identifier", "Tài khoản này không tồn tại. Vui lòng kiểm tra lại email hoặc số điện thoại.")
+        elif not otp.request_otp(ident):
+            form.add_error("identifier", "Chưa gửi được mã OTP. Vui lòng chờ ít phút rồi thử lại.")
+        else:
+            request.session[SESSION_RESET_KEY] = ident
+            messages.info(request, "Mã OTP đã được gửi tới email hoặc số điện thoại đã đăng ký.")
+            return redirect("reset_password")
     return render(request, "accounts/forgot.html", {"form": form})
 
 

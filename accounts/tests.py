@@ -114,17 +114,24 @@ class PasswordResetTests(TestCase):
         self.assertEqual(self.p.check_password("abc12345"), True)
 
     # ------------------------------------------------------ không lộ tài khoản
-    def test_unknown_account_same_response_and_nothing_sent(self):
-        r1 = self.c.post(reverse("forgot_password"), {"identifier": "khongco@example.com"}, follow=True)
-        r2 = self.c.post(reverse("forgot_password"), {"identifier": "an@example.com"}, follow=True)
-        self.assertEqual(len(mail.outbox), 1)                   # chỉ tài khoản thật được gửi
-        m1 = [str(m) for m in r1.context["messages"]]
-        m2 = [str(m) for m in r2.context["messages"]]
-        self.assertEqual(m1, m2)
+    def test_unknown_account_shows_error_without_opening_reset(self):
+        r = self.c.post(reverse("forgot_password"), {"identifier": "khongco@example.com"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Tài khoản này không tồn tại")
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertNotIn("reset_ident", self.c.session)
+        self.assertRedirects(self.c.get(reverse("reset_password")), reverse("forgot_password"))
 
     def test_unknown_account_cannot_reset(self):
         self.c.post(reverse("forgot_password"), {"identifier": "khongco@example.com"})
-        self.assertContains(self.finish("123456"), otp.BAD_OTP)
+        self.assertRedirects(self.finish("123456"), reverse("forgot_password"))
+
+    def test_delivery_failure_does_not_open_reset(self):
+        with mock.patch("accounts.otp._deliver", side_effect=OSError("SMTP unavailable")):
+            r = self.c.post(reverse("forgot_password"), {"identifier": "an@example.com"})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "Chưa gửi được mã OTP")
+        self.assertNotIn("reset_ident", self.c.session)
 
     def test_invalid_identifier_format(self):
         r = self.c.post(reverse("forgot_password"), {"identifier": "abc"})
