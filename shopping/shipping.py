@@ -167,6 +167,8 @@ def simulate_demo_status(order_code, status):
             carrier="GHN", tracking_code=order_code).exclude(shipping_data={}).first()
         if not order:
             raise services.OrderError("Không tìm thấy đơn GHN có mã vận đơn này.")
+        if order.shipping_data.get("api_url") != "https://dev-online-gateway.ghn.vn":
+            raise services.OrderError("Chỉ mô phỏng đơn GHN Staging.")
         if order.status == Order.DONE and order.ghn_status == status == "delivered":
             return order
         if order.status not in (Order.CONFIRMED, Order.SHIPPING):

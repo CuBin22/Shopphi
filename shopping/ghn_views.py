@@ -52,11 +52,11 @@ def webhook(request):
 @csrf_exempt
 @require_POST
 def demo_webhook(request):
-    if (not settings.DEBUG or not settings.GHN_ENABLED or not getattr(settings, "GHN_WEBHOOK_DEMO", False)
-            or settings.GHN_API_URL != "https://dev-online-gateway.ghn.vn"):
+    if (not settings.GHN_ENABLED or not getattr(settings, "GHN_WEBHOOK_DEMO", False)
+            or settings.GHN_API_URL != "https://dev-online-gateway.ghn.vn"
+            or not getattr(settings, "GHN_WEBHOOK_DEMO_SECRET", "")):
         return JsonResponse({"error": "Demo webhook is disabled"}, status=404)
-    secret = settings.GHN_WEBHOOK_SECRET
-    if not secret or not hmac.compare_digest(request.headers.get("X-GHN-Secret", ""), secret):
+    if not hmac.compare_digest(request.headers.get("X-GHN-Demo-Secret", ""), settings.GHN_WEBHOOK_DEMO_SECRET):
         return JsonResponse({"error": "Unauthorized"}, status=403)
     try:
         if len(request.body) > 65536:

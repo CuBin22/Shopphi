@@ -2,6 +2,7 @@ import io
 import json
 import urllib.error
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from django.test import override_settings, SimpleTestCase
 from django.urls import reverse
@@ -10,6 +11,34 @@ from django.core.cache import cache
 from shopping import services
 from shopping.models import Order, OrderGroup
 from shopping.tests import Base
+
+
+@override_settings(DEBUG=False, GHN_ENABLED=True, GHN_API_URL="https://dev-online-gateway.ghn.vn",
+                   GHN_WEBHOOK_DEMO=True, GHN_WEBHOOK_DEMO_SECRET="demo-only-secret")
+class GHNDemoWebhookAccessTests(SimpleTestCase):
+    def setUp(self):
+        self.url = reverse("ghn_demo_webhook")
+        self.payload = {"OrderCode": "LY79BA", "Status": "picked"}
+
+    @override_settings(GHN_WEBHOOK_DEMO=False)
+    def test_disabled_endpoint_is_not_available(self):
+        self.assertEqual(self.client.post(self.url, self.payload, content_type="application/json").status_code, 404)
+
+    @override_settings(GHN_API_URL="https://online-gateway.ghn.vn")
+    def test_production_ghn_is_not_available(self):
+        self.assertEqual(self.client.post(self.url, self.payload, content_type="application/json",
+                                          HTTP_X_GHN_DEMO_SECRET="demo-only-secret").status_code, 404)
+
+    def test_separate_secret_is_required(self):
+        self.assertEqual(self.client.post(self.url, self.payload, content_type="application/json",
+                                          HTTP_X_GHN_SECRET="demo-only-secret").status_code, 403)
+        with patch("shopping.ghn_views.shipping.simulate_demo_status",
+                   return_value=SimpleNamespace(status=Order.SHIPPING, ghn_status="picked")) as simulate:
+            response = self.client.post(self.url, self.payload, content_type="application/json",
+                                        HTTP_X_GHN_DEMO_SECRET="demo-only-secret")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["ghn_status"], "picked")
+        simulate.assert_called_once_with("LY79BA", "picked")
 
 
 @override_settings(GHN_TOKEN="private-test-token", GHN_API_URL="https://dev-online-gateway.ghn.vn", GHN_TIMEOUT=10)
@@ -251,6 +280,30 @@ class GHNTests(Base):
             sync_order(order.pk)
         order.refresh_from_db()
         self.assertEqual(order.ghn_status, "delivered")
+
+    @override_settings(GHN_WEBHOOK_DEMO=True, GHN_WEBHOOK_DEMO_SECRET="demo-only-secret",
+                       GHN_API_URL="https://dev-online-gateway.ghn.vn")
+    def test_postman_demo_moves_buyer_and_seller_order(self):
+        order = self.place()
+        with patch("shopping.ghn.request", side_effect=self.api):
+            services.update_status(self.v1u, order.pk, Order.CONFIRMED)
+        payload = {"OrderCode": order.tracking_code, "Status": "picked"}
+        url = reverse("ghn_demo_webhook")
+        response = self.client.post(url, payload, content_type="application/json",
+                                    HTTP_X_GHN_DEMO_SECRET="demo-only-secret")
+        self.assertEqual(response.status_code, 200)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.SHIPPING)
+        self.assertEqual(order.ghn_status, "picked")
+
+        payload["Status"] = "delivered"
+        response = self.client.post(url, payload, content_type="application/json",
+                                    HTTP_X_GHN_DEMO_SECRET="demo-only-secret")
+        self.assertEqual(response.status_code, 200)
+        order.refresh_from_db()
+        self.assertEqual(order.status, Order.DONE)
+        self.assertEqual(order.ghn_status, "delivered")
+        self.assertEqual(order.status_logs.filter(new_status=Order.DONE).count(), 1)
 
     def test_webhook_status_demo(self):
         """Demo callback với HTTP GHN giả lập, chỉ chạy trên test database."""

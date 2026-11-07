@@ -221,3 +221,4 @@ GHN_API_URL = os.environ.get("GHN_API_URL", "https://dev-online-gateway.ghn.vn")
 GHN_TIMEOUT = int(os.environ.get("GHN_TIMEOUT", "10"))
 GHN_WEBHOOK_SECRET = os.environ.get("GHN_WEBHOOK_SECRET", "")
 GHN_WEBHOOK_DEMO = os.environ.get("GHN_WEBHOOK_DEMO", "0") == "1"
+GHN_WEBHOOK_DEMO_SECRET = os.environ.get("GHN_WEBHOOK_DEMO_SECRET", "")
