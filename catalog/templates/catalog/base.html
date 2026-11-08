@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="{% static 'catalog/css/app.css' %}">
   <link rel="stylesheet" href="{% static 'catalog/css/storefront.css' %}">
   <link rel="stylesheet" href="{% static 'catalog/css/header-footer.css' %}">
+  <link rel="stylesheet" href="{% static 'catalog/css/refinement.css' %}">
 </head>
 <body class="{% block bodyclass %}{% endblock %}">
 {% include "catalog/_icons.html" %}
@@ -91,6 +92,14 @@
       <div class="sitefoot__tags">
         <span>{% icon "shield" %}Không lưu thông tin thẻ</span>
         <span>{% icon "package" %}Tách đơn theo gian hàng</span>
+      </div>
+      <div class="sitefoot__social" aria-label="Mạng xã hội Shopphi">
+        <span class="sitefoot__social-label">Kết nối cùng Shopphi</span>
+        <div class="sitefoot__social-list">
+          <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Mở trang chủ Facebook trong tab mới">Facebook</a>
+          <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Mở trang chủ Instagram trong tab mới">Instagram</a>
+          <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="Mở trang chủ TikTok trong tab mới">TikTok</a>
+        </div>
       </div>
     </section>
 
