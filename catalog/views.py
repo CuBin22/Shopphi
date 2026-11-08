@@ -66,9 +66,20 @@ def suggest(request):
 def shop_detail(request, pk):
     shop = get_object_or_404(Shop, pk=pk, status=Shop.ACTIVE)
     query = request.GET.get("q", "").strip()[:100]
-    products = services.annotated(Product.objects.sellable().filter(shop=shop))
+    category = request.GET.get("danh_muc", "")
+    sort = request.GET.get("sap_xep", "moi")
+    if sort not in services.SORTS:
+        sort = "moi"
+    shop_products = Product.objects.sellable().filter(shop=shop)
+    categories = Category.objects.filter(products__in=shop_products).distinct()
+    featured = list(services.annotated(shop_products).order_by("-created", "-id")[:6])
+    products = services.annotated(shop_products)
     if query:
-        products = products.filter(search_text__contains=services.khong_dau(query))
+        for token in services.khong_dau(query).split():
+            products = products.filter(search_text__contains=token)
+    if category:
+        products = products.filter(category__slug=category)
+    products = products.order_by(*services.SORTS[sort][1])
     paginator = Paginator(products, PAGE_SIZE)
     page = paginator.get_page(request.GET.get("trang"))
     from shopping.models import Review
@@ -76,7 +87,9 @@ def shop_detail(request, pk):
     return render(request, "catalog/shop.html", {
         "shop": shop, "products": page.object_list, "page": page, "total": paginator.count,
         "q": query, "rating_avg": round(rating["avg"], 1) if rating["avg"] else None,
-        "rating_count": rating["n"],
+        "rating_count": rating["n"], "shop_categories": categories,
+        "featured": featured, "category": category, "sort": sort,
+        "shop_product_count": shop_products.count(),
     })
 
 

@@ -28,6 +28,20 @@ def make_catalog(n, shop_status=Shop.ACTIVE):
 
 
 class AllProductsTests(TestCase):
+    def test_shop_catalog_filters_and_sorts_its_own_products(self):
+        shop = make_catalog(2)
+        other = make_catalog(1)
+        category = Category.objects.create(slug="do-choi", name="Đồ chơi")
+        product = Product.objects.filter(shop=shop).order_by("id").first()
+        product.category = category
+        product.save()
+        url = reverse("shop_detail", args=[shop.pk])
+        response = self.client.get(url, {"danh_muc": category.slug, "sap_xep": "gia-giam"})
+        self.assertEqual(response.context["total"], 1)
+        self.assertEqual(list(response.context["products"]), [product])
+        self.assertNotContains(response, other.name)
+        self.assertContains(response, "gia-giam")
+
     def test_search_shows_every_product_across_pages(self):
         make_catalog(70)                                     # nhiều hơn mức cắt cứng 60 trước đây
         seen = set()

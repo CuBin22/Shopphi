@@ -3,42 +3,67 @@
 {% block title %}{{ shop.name }} - Shopphi{% endblock %}
 {% block bodyclass %}is-shop{% endblock %}
 {% block content %}
-<main class="shop-page">
+<div class="shop-page">
   <section class="shop-hero" aria-label="Thông tin gian hàng">
     <div class="shop-hero__brand">
-      <span class="shop-hero__avatar">{% icon "store" %}</span>
-      <div><span class="shop-hero__eyebrow">GIAN HÀNG SHOPPHI</span><h1>{{ shop.name }}</h1>
-        {% if shop.description %}<p>{{ shop.description }}</p>{% else %}<p>Khám phá các sản phẩm đang bán tại {{ shop.name }}.</p>{% endif %}
+      {% if featured.0.image %}<img class="shop-hero__cover" src="{{ featured.0.image.url }}" alt="" loading="eager">{% endif %}
+      <span class="shop-hero__avatar" aria-hidden="true">{{ shop.name|slice:":1"|upper }}</span>
+      <div class="shop-hero__identity"><span class="shop-hero__eyebrow">GIAN HÀNG TRÊN SHOPPHI</span><h1>{{ shop.name }}</h1>
+        <p>{% if shop.description %}{{ shop.description|truncatechars:110 }}{% else %}Khám phá sản phẩm của {{ shop.name }}.{% endif %}</p>
       </div>
     </div>
     <div class="shop-hero__facts">
-      <div><span>{% icon "package" %}Sản phẩm</span><strong>{{ shop.products.count }}</strong></div>
-      <div><span>{% icon "star" %}Đánh giá</span><strong>{% if rating_avg %}{{ rating_avg }} / 5{% else %}Chưa có{% endif %}</strong><small>{{ rating_count }} lượt</small></div>
-      <div><span>{% icon "clock" %}Tham gia</span><strong>{{ shop.created|date:"m/Y" }}</strong></div>
-      {% if shop.contact %}<div><span>{% icon "message" %}Liên hệ</span><strong>{{ shop.contact }}</strong></div>{% endif %}
+      <div><span>{% icon "package" %} Sản phẩm</span><strong>{{ shop_product_count }}</strong></div>
+      <div><span>{% icon "star" %} Đánh giá</span><strong>{% if rating_avg %}{{ rating_avg }} / 5{% else %}Chưa có{% endif %}</strong><small>{{ rating_count }} lượt</small></div>
+      <div><span>{% icon "clock" %} Tham gia</span><strong>{{ shop.created|date:"m/Y" }}</strong></div>
+      {% if shop.contact %}<div><span>{% icon "message" %} Liên hệ</span><strong>{{ shop.contact }}</strong></div>{% endif %}
     </div>
   </section>
 
+  <nav class="shop-tabs" aria-label="Khám phá gian hàng">
+    {% if featured %}<a href="#shop-featured">Khám phá</a>{% endif %}<a href="#shop-products-title">Tất cả sản phẩm</a>
+    {% for c in shop_categories %}<a href="?danh_muc={{ c.slug|urlencode }}#shop-products-title">{{ c.name }}</a>{% endfor %}
+  </nav>
+
+  {% if featured %}<section class="shop-featured" id="shop-featured" aria-labelledby="shop-featured-title">
+    <div class="shop-featured__head"><div><span class="shop-hero__eyebrow">TỪ {{ shop.name|upper }}</span><h2 id="shop-featured-title">Khám phá trong shop</h2></div><a href="#shop-products-title">Xem tất cả →</a></div>
+    <div class="grid">{% for p in featured %}{% include "catalog/_card.html" with nguon="gian-hang" %}{% endfor %}</div>
+  </section>{% endif %}
+
   <section class="shop-catalog" aria-labelledby="shop-products-title">
     <div class="shop-catalog__top">
-      <div><span class="shop-hero__eyebrow">DANH MỤC CỬA HÀNG</span><h2 id="shop-products-title">Tất cả sản phẩm</h2></div>
+      <div><span class="shop-hero__eyebrow">SẢN PHẨM CỦA SHOP</span><h2 id="shop-products-title">Tất cả sản phẩm</h2></div>
       <form class="shop-search" method="get" role="search">
-        <label class="sr" for="shop-query">Tìm trong shop</label>
-        <input id="shop-query" type="search" name="q" value="{{ q }}" placeholder="Tìm sản phẩm trong {{ shop.name }}…">
-        <button class="btn" type="submit">Tìm kiếm</button>
+        <label class="sr" for="shop-query">Tìm trong {{ shop.name }}</label>
+        <input id="shop-query" type="search" name="q" value="{{ q }}" placeholder="Tìm trong shop này…">
+        {% if category %}<input type="hidden" name="danh_muc" value="{{ category }}">{% endif %}
+        <input type="hidden" name="sap_xep" value="{{ sort }}"><button class="btn" type="submit">Tìm kiếm</button>
       </form>
     </div>
-    <div class="shop-catalog__meta"><span>{{ total }} sản phẩm</span>{% if q %}<span>Kết quả cho “{{ q }}”</span>{% endif %}</div>
-    {% if products %}
-      <div class="grid">
-        {% for p in products %}{% include "catalog/_card.html" %}{% endfor %}
+    <div class="shop-browser">
+      <aside class="shop-filter" aria-label="Danh mục trong shop"><h3>Danh mục</h3>
+        <a {% if not category %}aria-current="page"{% endif %} href="?{% if q %}q={{ q|urlencode }}&{% endif %}sap_xep={{ sort }}#shop-products-title">Tất cả</a>
+        {% for c in shop_categories %}<a {% if category == c.slug %}aria-current="page"{% endif %} href="?{% if q %}q={{ q|urlencode }}&{% endif %}danh_muc={{ c.slug|urlencode }}&sap_xep={{ sort }}#shop-products-title">{{ c.name }}</a>{% endfor %}
+      </aside>
+      <div class="shop-results">
+        <form class="shop-sort" method="get" aria-label="Sắp xếp sản phẩm">
+          {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}{% if category %}<input type="hidden" name="danh_muc" value="{{ category }}">{% endif %}
+          <span>Sắp xếp theo</span>
+          <button type="submit" name="sap_xep" value="moi" {% if sort == 'moi' %}aria-current="true"{% endif %}>Mới nhất</button>
+          <button type="submit" name="sap_xep" value="gia-tang" {% if sort == 'gia-tang' %}aria-current="true"{% endif %}>Giá thấp đến cao</button>
+          <button type="submit" name="sap_xep" value="gia-giam" {% if sort == 'gia-giam' %}aria-current="true"{% endif %}>Giá cao đến thấp</button>
+        </form>
+        <div class="shop-catalog__meta"><span>{{ total }} sản phẩm</span>{% if q %}<span>“{{ q }}”</span>{% endif %}</div>
+        {% if products %}
+          <div class="grid">{% for p in products %}{% include "catalog/_card.html" with nguon="gian-hang" %}{% endfor %}</div>
+          {% if page.has_other_pages %}<nav class="shop-pagination" aria-label="Phân trang">
+            {% if page.has_previous %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if category %}danh_muc={{ category|urlencode }}&{% endif %}sap_xep={{ sort }}&trang={{ page.previous_page_number }}#shop-products-title">← Trang trước</a>{% endif %}
+            <span>Trang {{ page.number }} / {{ page.paginator.num_pages }}</span>
+            {% if page.has_next %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if category %}danh_muc={{ category|urlencode }}&{% endif %}sap_xep={{ sort }}&trang={{ page.next_page_number }}#shop-products-title">Trang sau →</a>{% endif %}
+          </nav>{% endif %}
+        {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>{% if q or category %}Không tìm thấy sản phẩm phù hợp trong shop.{% else %}Shop chưa có sản phẩm đang bán.{% endif %}</p></div>{% endif %}
       </div>
-      {% if page.has_other_pages %}<nav class="shop-pagination" aria-label="Phân trang">
-        {% if page.has_previous %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}trang={{ page.previous_page_number }}">← Trang trước</a>{% endif %}
-        <span>Trang {{ page.number }} / {{ page.paginator.num_pages }}</span>
-        {% if page.has_next %}<a class="btn btn--ghost" href="?{% if q %}q={{ q|urlencode }}&{% endif %}trang={{ page.next_page_number }}">Trang sau →</a>{% endif %}
-      </nav>{% endif %}
-    {% else %}<div class="empty"><span class="empty__ico">{% icon "package" %}</span><p>{% if q %}Không tìm thấy sản phẩm phù hợp trong shop.{% else %}Shop chưa có sản phẩm đang bán.{% endif %}</p></div>{% endif %}
+    </div>
   </section>
-</main>
+</div>
 {% endblock %}
