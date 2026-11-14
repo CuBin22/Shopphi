@@ -13,7 +13,7 @@
 }
 body { background: var(--paper); }
 .top { background: #e95b23; color: #fff; box-shadow: 0 4px 18px rgba(125, 47, 11, .12); border-bottom: 0; }
-.top__utility { color: #fff; border-bottom: 1px solid rgba(255,255,255,.22); padding-block: 7px; }
+.top__utility { color: #fff; border-bottom: 0; padding-block: 7px; }
 .top__utility a, .top__utility button { color: inherit; }
 .top__utility a:hover, .top__utility button:hover { color: #fff; text-decoration: underline; }
 .top__row { padding-block: 12px; }
@@ -28,7 +28,7 @@ body { background: var(--paper); }
 .top .count { background: #fff; color: #b93e12; border-color: #e95b23; }
 .top__links > .btn { color: #ae3a12; border-color: #fff; background: #fff; }
 .top__links > .btn:hover { border-color: #fff4e9; background: #fff4e9; }
-.top .cats { border-top: 1px solid rgba(255,255,255,.22); padding-top: 3px; }
+.top .cats { border-top: 0; padding-top: 3px; }
 .top .cats a { color: #fff; border-radius: 7px; transition: color .18s, background .18s; }
 .top .cats a:hover, .top .cats a[aria-current="page"] { color: #fff; background: rgba(255,255,255,.18); border-bottom-color: transparent; }
 .top :focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
