@@ -23,6 +23,10 @@ body { background: var(--paper); }
 .top .search:focus-within { border-color: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.35); }
 .top .search button { background: #b93e12; }
 .top .search button:hover { background: #8f2d0c; }
+.top .search .suggest { top: calc(100% + 8px); padding: 6px; border: 1px solid #eee5df; border-radius: 10px; box-shadow: 0 14px 30px rgba(52, 28, 18, .18); }
+.top .search .suggest li { display: block; position: relative; padding: 10px 12px 10px 42px; border-radius: 6px; font-size: 15px; line-height: 1.5; white-space: normal; }
+.top .search .suggest li::before { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); }
+.top .search .suggest mark { color: #c94716; }
 .top .iconlink, .top .headlink { color: #fff; }
 .top .iconlink:hover, .top .headlink:hover { background: rgba(255,255,255,.16); color: #fff; }
 .top .count { background: #fff; color: #b93e12; border-color: #e95b23; }
