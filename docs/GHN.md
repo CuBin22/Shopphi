@@ -11,6 +11,7 @@ GHN_API_URL=https://dev-online-gateway.ghn.vn
 GHN_TOKEN=token_staging_cua_ban
 GHN_SHOP_ID=ma_kho_ghn_cua_ban
 GHN_WEBHOOK_SECRET=chuoi_ngau_nhien_dai_do_ban_tu_dat
+GHN_WEBHOOK_DEMO=0
 GHN_TIMEOUT=10
 ```
 
@@ -20,7 +21,7 @@ Không commit token/secret hoặc gửi vào chat. Có thể tạo secret bằng
 
    Nếu tính phí báo `SHOP_INFO_ERROR`, vào trang GHN thử nghiệm và cập nhật đầy đủ địa chỉ lấy hàng của kho. Token gọi được danh sách tỉnh/thành không có nghĩa là kho đã đủ thông tin để tính cước.
 4. Người bán vào **Sản phẩm → Sửa**, nhập khối lượng đóng gói (gram) và dài/rộng/cao (cm) của mỗi biến thể. Không có số đo thì hệ thống chặn đặt hàng GHN.
-5. Khách chọn địa chỉ, bấm **Tính phí GHN**, xem tổng tiền rồi **Đặt hàng**.
+5. Khách nhập số nhà/tên đường và chọn tỉnh/thành, quận/huyện, phường/xã theo danh mục GHN. Khách bấm **Tính phí GHN**, xem tổng tiền rồi **Đặt hàng**.
 6. Người bán bấm **Xác nhận đơn** để tạo vận đơn. Đơn online phải thanh toán trước. Trạng thái vẫn Đã xác nhận cho đến khi GHN nhận hàng. Nút **Đồng bộ GHN** lấy trạng thái mới, dùng được ngay trên localhost.
 
 `GHN_ENABLED=0` giữ phí cố định cho đơn mới. Đơn GHN cũ vẫn đồng bộ/hủy qua GHN. Không đổi môi trường khi còn đơn cần xử lý; hệ thống chặn gửi đơn staging sang production hoặc ngược lại.
@@ -42,6 +43,19 @@ GHN không gọi được localhost trực tiếp. Ngoài nút Đồng bộ, có
 
 Server kiểm tra secret và gọi lại API GHN để xác minh mã vận đơn, kho, trạng thái và thời điểm. Callback cũ/lặp không ghi nhận thanh toán hoặc hoàn kho lần nữa.
 
+### Demo callback bằng Postman
+
+Callback thật không nhận trạng thái giả: Shopphi truy vấn GHN để xác minh. Để trình diễn callback mà không cần shipper thật, trên máy demo đặt `GHN_ENABLED=1`, `GHN_WEBHOOK_DEMO=1`, `GHN_WEBHOOK_DEMO_SECRET` là một chuỗi bí mật riêng trong `.env`, giữ `GHN_API_URL=https://dev-online-gateway.ghn.vn`, rồi chạy `docker compose up -d --force-recreate web`. Gửi Postman tới `https://TEN-NGROK/van-chuyen/ghn/webhook/demo/` (không dùng URL webhook thật), với header `X-GHN-Demo-Secret` bằng `GHN_WEBHOOK_DEMO_SECRET`, `Content-Type: application/json`, body ví dụ:
+
+```json
+{
+  "OrderCode": "LYQP4N",
+  "Status": "picked"
+}
+```
+
+Demo chấp nhận hai bước `picked` → `delivered` theo thứ tự. `picked` chuyển đơn Shopphi sang **Đang giao**; `delivered` chuyển sang **Hoàn thành** và xử lý COD theo quy tắc hiện có. Tắt `GHN_WEBHOOK_DEMO` sau khi trình diễn; endpoint kiểm tra cờ demo, secret riêng và API URL GHN Staging, không kiểm tra Django DEBUG.
+
 ## Quy tắc nghiệp vụ và giới hạn
 
 - Cước tính riêng cho từng gian hàng, kiểm tra lại tại backend lúc đặt. Nếu phí đổi, khách phải kiểm tra lại tổng tiền.
@@ -52,7 +66,7 @@ Server kiểm tra secret và gọi lại API GHN để xác minh mã vận đơn
 - Hủy đơn có vận đơn chỉ hoàn kho sau khi GHN xác nhận hủy.
 - GHN giao thành công hoàn thành đơn và ghi nhận COD. Đơn GHN không tự hoàn thành sau 7 ngày.
 - Hoàn hàng, thất lạc, hư hỏng được ghi nhận và báo người bán xử lý thực tế; không tự hoàn tiền/nhập lại hàng vào kho.
-- Dùng danh mục ba cấp vì API tính phí yêu cầu quận/huyện và mã phường/xã. Chưa tích hợp địa chỉ mới hai cấp.
+- Dùng danh mục địa chỉ GHN ba cấp tỉnh/thành, quận/huyện, phường/xã để báo phí và tạo vận đơn.
 - Hỗ trợ một kiện nhẹ dưới 20 kg, mỗi cạnh ≤200 cm, khai giá ≤5 triệu đồng. Vượt giới hạn yêu cầu tách đơn.
 - Ghép kiện: dài/rộng lớn nhất, cộng chiều cao theo số lượng. Số đo phải phù hợp thực tế; GHN có thể điều chỉnh cước sau khi cân đo, hệ thống không tự tăng tiền khách đã trả.
 - Một token sàn với nhiều kho; chưa hỗ trợ token riêng của từng người bán.
@@ -63,4 +77,6 @@ Server kiểm tra secret và gọi lại API GHN để xác minh mã vận đơn
 
 Tests dùng PostgreSQL test database và HTTP giả lập, không tạo vận đơn bên ngoài. Sau khi cấu hình, thử một đơn staging qua checkout, xác nhận, xem mã trên GHN, đồng bộ rồi hủy.
 
-Nguồn: [Tạo đơn](https://developer.ghn.vn/vi/docs/order/create), [Tính phí](https://developer.ghn.vn/vi/docs/order/calculate-fee), [Webhook](https://developer.ghn.vn/vi/docs/webhook/callback-order-status), [Hủy đơn](https://developer.ghn.vn/vi/docs/order/cancel).
+Nguồn: [Tạo đơn](https://developer.ghn.dev/vi/docs/order/create), [Xem trước phí](https://developer.ghn.dev/vi/docs/order/preview), [Tỉnh/thành mới](https://developer.ghn.dev/vi/docs/master-data/get-province-new), [Phường/xã mới](https://developer.ghn.dev/vi/docs/master-data/get-ward-new), [Webhook](https://developer.ghn.dev/vi/docs/webhook/callback-order-status), [Hủy đơn](https://developer.ghn.dev/vi/docs/order/cancel).
+
+https://5sao.ghn.dev/ops-live

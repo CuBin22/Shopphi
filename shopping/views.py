@@ -240,7 +240,6 @@ def checkout(request):
 
 @customer_only
 def order_success(request, group_id):
-    payments.reconcile_user(request.user)
     _timeouts()
     group = get_object_or_404(OrderGroup, pk=group_id, user=request.user)
     orders = list(group.orders.select_related("shop"))
@@ -299,7 +298,7 @@ def review_create(request, pk, product_id):
 @customer_only
 @require_POST
 def pay_group(request, group_id):
-    """Tạo yêu cầu thanh toán cho cả nhóm đơn rồi chuyển hướng sang VNPay/ZaloPay (hoặc cổng giả lập khi PAYMENT_PROVIDER=sandbox)."""
+    """Tạo yêu cầu thanh toán cho cả nhóm đơn rồi chuyển hướng sang VNPay (hoặc cổng giả lập khi PAYMENT_PROVIDER=sandbox)."""
     try:
         txn = payments.create_payment(request.user, group_id)
         url = payments.start_online_payment(txn, request)
@@ -314,11 +313,8 @@ def pay_group(request, group_id):
 @require_GET
 @never_cache
 def payment_status(request, group_id):
-    """Trang đặt hàng hỏi định kỳ (JS) để biết nhóm đơn đã thanh toán chưa, kể cả khi trang ZaloPay bị treo và không
-    chuyển khách về. Mỗi lần hỏi sẽ đối soát với ZaloPay (/v2/query). state: paid | pending | failed | canceled."""
+    """Trả trạng thái thanh toán của nhóm đơn cho khách hàng."""
     group = get_object_or_404(OrderGroup, pk=group_id, user=request.user)
-    if group.payment_method == OrderGroup.ONLINE:
-        payments.reconcile_group(group.pk, throttle=10)
     live = [o for o in group.orders.all() if o.status not in (Order.CANCELED, Order.FAILED)]
     if not live:
         state = "canceled"
@@ -336,7 +332,7 @@ def sandbox_gateway(request, ref):
     """Cổng thanh toán GIẢ LẬP (Sandbox). Không nhận thông tin thẻ; chỉ cho chọn kết quả thử nghiệm."""
     txn = get_object_or_404(PaymentTransaction.objects.select_related("group"), ref=ref)
     if payments.provider() != "sandbox" or txn.provider != PaymentTransaction.SANDBOX or txn.group.user_id != request.user.pk:
-        raise Http404   # cổng giả lập tự ký kết quả: không được mở khi dùng ZaloPay hay cho người khác
+        raise Http404   # cổng giả lập tự ký kết quả: chỉ chủ đơn được mở
     if request.method == "POST":
         params = payments.build_callback(txn, request.POST.get("result", "cancel"))
         return redirect(reverse("payment_return") + "?" + urlencode(params))
@@ -359,47 +355,6 @@ def payment_return(request):
         "BO_QUA": (messages.info, "Kết quả này đã được xử lý trước đó, đơn hàng không bị cập nhật lại."),
         "THANH_TOAN_MUON": (messages.warning, "Giao dịch đến muộn (đơn đã hủy hoặc đã thanh toán bằng giao dịch khác). "
                                               "Số tiền được chuyển sang Chờ hoàn tiền (mô phỏng)."),
-    }[outcome]
-    text[0](request, text[1])
-    if request.user.is_authenticated and txn.group.user_id == request.user.pk:
-        return redirect("order_success", group_id=txn.group_id)
-    return back
-
-
-# ------------------------------------------------------------------- ZaloPay
-@csrf_exempt
-@require_POST
-def zalopay_callback(request):
-    """ZaloPay gọi vào đây (server-to-server) khi khách đã thanh toán. Không cần đăng nhập, không dùng CSRF:
-    tính xác thực nằm ở MAC (HMAC-SHA256 với key2). Phản hồi JSON theo đặc tả ZaloPay."""
-    return JsonResponse(payments.process_zalopay_callback(request.body))
-
-
-@require_GET
-def zalopay_return(request):
-    """Khách được ZaloPay chuyển về sau khi thanh toán/hủy. Không tin tham số trên URL: lấy mã giao dịch rồi hỏi lại ZaloPay
-    bằng /v2/query (có ký key1) để biết kết quả thật."""
-    back = redirect("my_orders") if request.user.is_authenticated else redirect("home")
-    app_trans_id = request.GET.get("apptransid", "") or request.GET.get("app_trans_id", "")
-    txn = PaymentTransaction.objects.select_related("group").filter(app_trans_id=app_trans_id).first() if app_trans_id else None
-    if txn is None:
-        messages.error(request, "Không xác định được giao dịch ZaloPay, vui lòng xem trạng thái tại Đơn hàng của tôi.")
-        return back
-    try:
-        outcome, txn = payments.sync_zalopay(txn)
-    except OrderError as e:
-        messages.error(request, str(e))
-        return back
-    if outcome == "BO_QUA" and txn.status == PaymentTransaction.SUCCESS:
-        outcome = "THANH_CONG"                 # callback đã xử lý trước khi khách quay về
-    text = {
-        "THANH_CONG": (messages.success, "Thanh toán ZaloPay thành công. Người bán sẽ xác nhận đơn của bạn."),
-        "THAT_BAI": (messages.warning, "Thanh toán chưa thành công hoặc đã bị hủy tại ZaloPay. Bạn có thể thanh toán lại trong hạn giữ kho."),
-        "DANG_XU_LY": (messages.info, "ZaloPay chưa ghi nhận thanh toán. Nếu bạn đã thanh toán, vui lòng chờ ít phút rồi tải lại; "
-                                      "hệ thống sẽ tự đối soát."),
-        "BO_QUA": (messages.info, "Kết quả này đã được xử lý trước đó, đơn hàng không bị cập nhật lại."),
-        "THANH_TOAN_MUON": (messages.warning, "Giao dịch đến muộn (đơn đã hủy hoặc đã thanh toán bằng giao dịch khác). "
-                                              "Số tiền được chuyển sang Chờ hoàn tiền."),
     }[outcome]
     text[0](request, text[1])
     if request.user.is_authenticated and txn.group.user_id == request.user.pk:

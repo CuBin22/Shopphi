@@ -1,6 +1,6 @@
 """Lớp VNPay (Sandbox/Production, API 2.1.0) - chỉ lo dựng URL và chữ ký, KHÔNG đụng cơ sở dữ liệu.
 
-Khác ZaloPay: không có API "tạo đơn". Hệ thống tự dựng URL thanh toán có ký rồi chuyển hướng khách:
+Hệ thống tự dựng URL thanh toán có ký rồi chuyển hướng khách:
   * URL: {vnp_Url}?<tham số vnp_* sắp xếp theo tên, mã hóa quote_plus>&vnp_SecureHash=HMAC_SHA512(hash_secret, <chuỗi tham số>)
   * Kết quả về qua Return URL (khách quay lại) và IPN (VNPay gọi server): cùng cách ký, bỏ vnp_SecureHash khi tính lại.
   * Thành công khi vnp_ResponseCode == "00" và vnp_TransactionStatus == "00"; vnp_Amount = số tiền x 100.

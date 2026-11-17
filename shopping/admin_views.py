@@ -83,7 +83,7 @@ def keywords_review(request):
 
 @admin_only
 def refunds(request):
-    """Hoàn tiền: đơn/giao dịch ZaloPay gọi API /v2/refund; giao dịch cổng giả lập thì hoàn tiền mô phỏng."""
+    """Ghi nhận hoàn tiền thủ công cho đơn hoặc giao dịch thanh toán muộn."""
     if request.method == "POST":
         try:
             if request.POST.get("kind") == "txn":
@@ -91,9 +91,7 @@ def refunds(request):
             else:
                 outcome = payments.refund_order(request.POST.get("id"), request.user)
             if outcome == "DA_HOAN_TIEN":
-                messages.success(request, "Đã hoàn tiền.")
-            else:
-                messages.info(request, "ZaloPay đang xử lý hoàn tiền. Bấm Hoàn tiền lần nữa sau ít phút để kiểm tra kết quả.")
+                messages.success(request, "Đã ghi nhận hoàn tiền trong hệ thống.")
         except OrderError as e:
             messages.error(request, str(e))
         return redirect("refunds")

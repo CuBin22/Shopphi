@@ -19,6 +19,24 @@ SECRET = "secret-test"
 @override_settings(PAYMENT_PROVIDER="vnpay", VNPAY_TMN_CODE="TMN", VNPAY_HASH_SECRET=SECRET,
                    VNPAY_URL="https://sandbox.vnpayment.vn/paymentv2/vpcpay.html", VNPAY_RETURN_URL="")
 class VnpayTests(Base):
+    @override_settings(PAYMENT_PROVIDER="unsupported")
+    def test_removed_provider_cannot_start_payment(self):
+        g = services.place_order(self.cust, {self.a.pk: 1}, INFO, "CONG_THANH_TOAN")
+        txn = payments.create_payment(self.cust, g.pk)
+        with self.assertRaises(payments.PaymentError):
+            payments.start_online_payment(txn)
+
+    def test_historical_provider_is_not_marked_refunded_without_external_refund(self):
+        g, txn = self.new_txn()
+        payments.expire_overdue(g.hold_until + timedelta(seconds=1))
+        txn.provider = "LEGACY"
+        txn.refund_status = PaymentTransaction.REFUND_WAIT
+        txn.save(update_fields=["provider", "refund_status"])
+        with self.assertRaises(payments.PaymentError):
+            payments.refund_late_transaction(txn.pk)
+        txn.refresh_from_db()
+        self.assertEqual(txn.refund_status, PaymentTransaction.REFUND_WAIT)
+
     def new_txn(self):
         g = services.place_order(self.cust, {self.a.pk: 2, self.b.pk: 1}, INFO, "CONG_THANH_TOAN")
         txn = payments.create_payment(self.cust, g.pk)
@@ -100,7 +118,7 @@ class VnpayTests(Base):
 
     def test_success_after_cancel_is_late_payment_and_refund_is_simulated(self):
         g, txn = self.new_txn()
-        payments.expire_overdue(g.hold_until + timedelta(seconds=1), reconcile=False)
+        payments.expire_overdue(g.hold_until + timedelta(seconds=1))
         late = vnpay.vn_date(g.hold_until + timedelta(minutes=5))
         self.assertEqual(payments.process_vnpay(self.result(txn, vnp_PayDate=late))[0], "00")
         txn.refresh_from_db()

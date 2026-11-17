@@ -51,7 +51,6 @@ def _unpaid_online(qs):
 @customer_only
 def my_orders(request):
     """Danh sách đơn theo nhóm đơn; lọc theo trạng thái (tab), tìm theo mã đơn / mã nhóm / tên sản phẩm."""
-    payments.reconcile_user(request.user)       # chốt giao dịch ZaloPay còn chờ (phòng trang ZaloPay không chuyển về)
     _timeouts()
     user = request.user
     status = request.GET.get("trang_thai", "").strip()
@@ -115,7 +114,6 @@ def _steps(order, logs):
 @customer_only
 def order_detail(request, pk):
     """Chi tiết một đơn: tiến trình, sản phẩm, tiền, thanh toán, vận chuyển, yêu cầu hủy, nhật ký, đánh giá."""
-    payments.reconcile_user(request.user)
     _timeouts()
     order = get_object_or_404(Order.objects.select_related("shop", "group", "shop_coupon", "group__global_coupon", "payment_txn"),
                               pk=pk, group__user=request.user)

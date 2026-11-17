@@ -630,11 +630,6 @@ body > main.wrap--wide { width: min(1360px, 100% - 40px); }
   .orderrow__side { width: 100%; grid-auto-flow: column; justify-content: space-between; align-items: center; }
 }
 
-/* ---- v6.1: khung chờ thanh toán ZaloPay ---- */
-.paywait { margin: 12px 0; padding: 14px 16px; border: 1px solid var(--blue); border-radius: var(--r-lg); background: var(--blue-soft); display: grid; gap: 10px; }
-.paywait__msg { margin: 0; color: var(--navy); }
-.paywait__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
 /* Shared refresh: storefront and seller workspace use the same quiet surfaces. */
 .panel, .formcard, .manage-card, .stat, .tbl-wrap, .filterbar, .note, .steps {
   border-radius: var(--r-lg);

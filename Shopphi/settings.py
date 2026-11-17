@@ -167,23 +167,10 @@ VNPAY_URL = os.environ.get("VNPAY_URL", "https://sandbox.vnpayment.vn/paymentv2/
 # Để trống: tự dựng từ địa chỉ đang truy cập (/thanh-toan/vnpay/ket-qua/). IPN (VNPay gọi server) cần URL công khai khai báo trong cổng quản trị VNPay: /thanh-toan/vnpay/ipn/
 VNPAY_RETURN_URL = os.environ.get("VNPAY_RETURN_URL", "")
 
-# ---- Thanh toán ZaloPay (Sandbox) ----
-# PAYMENT_PROVIDER: "vnpay" (VNPay Sandbox, mặc định), "zalopay" (ZaloPay Sandbox) hoặc "sandbox" (cổng giả lập trong dự án, chạy offline).
+# PAYMENT_PROVIDER: "vnpay" (VNPay Sandbox) hoặc "sandbox" (cổng giả lập offline).
 PAYMENT_PROVIDER = os.environ.get("PAYMENT_PROVIDER", "vnpay").lower()
-# Giá trị mặc định dưới đây là tài khoản DEMO công khai của ZaloPay (app_id 2553) để chạy thử ngay.
-# Khi làm thật hãy đăng ký merchant Sandbox tại https://docs.zalopay.vn/ rồi đặt biến môi trường ZALOPAY_* của riêng bạn.
-ZALOPAY_APP_ID = int(os.environ.get("ZALOPAY_APP_ID", "2553"))
-ZALOPAY_KEY1 = os.environ.get("ZALOPAY_KEY1", "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL")   # ký yêu cầu tạo đơn / truy vấn / hoàn tiền
-ZALOPAY_KEY2 = os.environ.get("ZALOPAY_KEY2", "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz")   # xác thực callback ZaloPay gửi về
-ZALOPAY_ENDPOINT = os.environ.get("ZALOPAY_ENDPOINT", "https://sb-openapi.zalopay.vn").rstrip("/")
-ZALOPAY_TIMEOUT = int(os.environ.get("ZALOPAY_TIMEOUT", "10"))        # giây chờ khi gọi API ZaloPay
-# URL công khai để ZaloPay gọi báo kết quả (cần https, ví dụ qua ngrok: https://xxxx.ngrok-free.app/thanh-toan/zalopay/callback/).
-# Để trống: ZaloPay dùng callback URL đăng ký sẵn cho app; hệ thống vẫn nhận kết quả nhờ truy vấn khi khách quay lại + tác vụ đối soát.
-ZALOPAY_CALLBACK_URL = os.environ.get("ZALOPAY_CALLBACK_URL", "")
-# URL khách được chuyển về sau khi thanh toán. Để trống: tự dựng từ địa chỉ đang truy cập (/thanh-toan/zalopay/ket-qua/).
-ZALOPAY_REDIRECT_URL = os.environ.get("ZALOPAY_REDIRECT_URL", "")
-# Mã ngân hàng/hình thức: để trống = trang ZaloPay Gateway (QR đa năng, thẻ ATM, thẻ quốc tế); "zalopayapp" = mở app ZaloPay.
-ZALOPAY_BANK_CODE = os.environ.get("ZALOPAY_BANK_CODE", "")
+if PAYMENT_PROVIDER not in ("vnpay", "sandbox"):
+    raise ImproperlyConfigured("PAYMENT_PROVIDER chỉ hỗ trợ vnpay hoặc sandbox.")
 
 # ---- Quên mật khẩu bằng OTP (email / SMS) ----
 OTP_TTL_MINUTES = int(os.environ.get("OTP_TTL_MINUTES", "10"))          # mã OTP có hiệu lực bao lâu

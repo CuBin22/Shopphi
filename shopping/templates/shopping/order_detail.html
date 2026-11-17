@@ -80,7 +80,7 @@
       <ul>{% for t in txns %}<li><code>{{ t.ref }}</code> &middot; {{ t.amount|vnd }} &middot; {{ t.status|txn_status }}{% if t.refund_status %} &middot; <em>{{ t.refund_status|pay_status }}</em>{% endif %} <span class="shop">{{ t.created|date:"H:i d/m" }}</span></li>{% endfor %}</ul></details>{% endif %}
     {% if can_pay %}
       <p class="msg msg--warning">Cần thanh toán {{ pay_amount|vnd }}{% if pay_orders > 1 %} cho {{ pay_orders }} đơn của nhóm #{{ group.pk }}{% endif %}.{% if group.hold_until %} Kho được giữ đến <strong>{{ group.hold_until|date:"H:i d/m/Y" }}</strong>, quá hạn đơn sẽ tự hủy.{% endif %}</p>
-      <form method="post" action="{% url 'pay_group' group.pk %}"{% if payment_provider == 'zalopay' %} target="_blank" rel="noopener" data-pay="{{ group.pk }}" data-status-url="{% url 'payment_status' group.pk %}"{% endif %}>{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán trực tuyến ({{ provider_label }})</button></form>
+      <form method="post" action="{% url 'pay_group' group.pk %}">{% csrf_token %}<button class="btn" type="submit">{% icon "credit-card" %}Thanh toán trực tuyến ({{ provider_label }})</button></form>
     {% endif %}
   {% else %}
     <p class="shop">Thanh toán khi nhận hàng. Trạng thái chuyển sang Đã thanh toán khi đơn Hoàn thành.</p>
